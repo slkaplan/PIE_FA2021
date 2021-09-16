@@ -7,5 +7,5 @@ analog_val = [545,414,287,214,180,144,109,105,89,77,85,81,61,62,57]
 fit = np.polyfit(d, np.log(analog_val), 1)
 print(fit)
 
-plt.plot(d, analog_val)
-plt.show()
+# plt.plot(d, analog_val)
+# plt.show()
