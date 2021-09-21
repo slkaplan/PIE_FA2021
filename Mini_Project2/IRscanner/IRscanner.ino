@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <math.h> 
 
 Servo pan_servo;
 Servo tilt_servo;
@@ -42,15 +43,19 @@ void loop() {
 
   int IR_RAW = analogRead(IR_PIN);
   DISTANCE = 2906 * (pow(IR_RAW, -.899));
-  DISTANCE = moving_avg(DISTANCE);
-  if (DISTANCE >= IR_MAX){
-    DISTANCE = IR_MAX;
-  }
-  if (DISTANCE <= IR_MIN){
-    DISTANCE = IR_MIN;
-  }
 
-  Serial.println(AVERAGED);
+  // new eq:
+  //DISTANCE = 660
+  DISTANCE = moving_avg(DISTANCE);
+//  if (DISTANCE >= IR_MAX){
+//    DISTANCE = IR_MAX;
+//  }
+//  if (DISTANCE <= IR_MIN){
+//    DISTANCE = IR_MIN;
+//  }
+
+  //Serial.println(AVERAGED);
+  Serial.println(M_E);
   delay(50);
   //Serial.println(DISTANCE);
 
