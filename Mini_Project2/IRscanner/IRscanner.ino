@@ -1,9 +1,6 @@
 #include <Servo.h>
-<<<<<<< HEAD
 #include <RunningMedian.h>
-=======
-#include <math.h> 
->>>>>>> 82e6f9af2ef5cda183b54bd0eb9a09d84f455121
+#include <math.h>
 
 Servo pan_servo;
 Servo tilt_servo;
@@ -74,12 +71,9 @@ void loop() {
 //    DISTANCE = IR_MIN;
 //  }
 
-<<<<<<< HEAD
   // Serial.println(AVERAGED);
-=======
   //Serial.println(AVERAGED);
-  Serial.println(M_E);
->>>>>>> 82e6f9af2ef5cda183b54bd0eb9a09d84f455121
+  // Serial.println(M_E);
   delay(50);
   //Serial.println(DISTANCE);
 
