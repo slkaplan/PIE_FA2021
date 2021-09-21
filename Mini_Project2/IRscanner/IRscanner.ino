@@ -36,7 +36,59 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  manualSet();
+  delay(50);
+}
+
+int readIR() {
+  int IR_RAW = analogRead(IR_PIN);
+  DISTANCE = 2906 * (pow(IR_RAW, -.899));
+
+  // new eq:
+  //DISTANCE = 660
+  DISTANCE = moving_avg(DISTANCE);
+//  if (DISTANCE >= IR_MAX){
+//    DISTANCE = IR_MAX;
+//  }
+//  if (DISTANCE <= IR_MIN){
+//    DISTANCE = IR_MIN;
+//  }
+
+  // Serial.println(AVERAGED);
+  //Serial.println(AVERAGED);
+  // Serial.println(M_E);
+  //Serial.println(DISTANCE);
+  return DISTANCE;
+}
+
+int moving_avg(int data){
+  SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
+  READINGS[INDEX] = DISTANCE;           // Add the newest reading to the window
+  SUM = SUM + DISTANCE;                 // Add the newest reading to the sum
+  INDEX = (INDEX+1) % WINDOW_SIZE;   // Increment the index, and wrap to 0 if it exceeds the window size
+
+  AVERAGED = SUM / WINDOW_SIZE;      // Divide the sum of the window by the window size for the result
+
+//  Serial.print(DISTANCE);
+//  Serial.print(",");
+
+}
+
+void scan() {
+  for (int pan = 0; pan < 180; pan++) {
+    for (int tilt = 0; tilt < 180; tilt++) {
+      Serial.print("pan: ");
+      pan_servo.write(pan);                  // sets the servo position according to the scaled value
+      Serial.print(", tilt: ");
+      tilt_servo.write(tilt);
+      delay(10);
+      Serial.print(", IR: ");
+      Serial.print(readIR());
+    }
+  }
+}
+
+void manualSet() {
   pan_pot_val = analogRead(pan_pot);            // reads the value of the potentiometer (value between 0 and 1023)
   tilt_pot_val = analogRead(tilt_pot);            // reads the value of the potentiometer (value between 0 and 1023)
 
@@ -57,49 +109,4 @@ void loop() {
 
   pan_servo.write(pan_pot_val);                  // sets the servo position according to the scaled value
   tilt_servo.write(tilt_pot_val);
-
-  int IR_RAW = analogRead(IR_PIN);
-  DISTANCE = 2906 * (pow(IR_RAW, -.899));
-
-  // new eq:
-  //DISTANCE = 660
-  DISTANCE = moving_avg(DISTANCE);
-//  if (DISTANCE >= IR_MAX){
-//    DISTANCE = IR_MAX;
-//  }
-//  if (DISTANCE <= IR_MIN){
-//    DISTANCE = IR_MIN;
-//  }
-
-  // Serial.println(AVERAGED);
-  //Serial.println(AVERAGED);
-  // Serial.println(M_E);
-  delay(50);
-  //Serial.println(DISTANCE);
-
-
-  //Serial.println(pan_pot_val);
-
 }
-
-int moving_avg(int data){
-  SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
-  READINGS[INDEX] = DISTANCE;           // Add the newest reading to the window
-  SUM = SUM + DISTANCE;                 // Add the newest reading to the sum
-  INDEX = (INDEX+1) % WINDOW_SIZE;   // Increment the index, and wrap to 0 if it exceeds the window size
-
-  AVERAGED = SUM / WINDOW_SIZE;      // Divide the sum of the window by the window size for the result
-
-//  Serial.print(DISTANCE);
-//  Serial.print(",");
-
-}
-
-
-// int pot_index = 0;
-// int pot_readings[WINDOW_SIZE] = {0};
-// int moving_median(int data) {
-//   pot_readings[pot_index] = data;
-
-// }
-
