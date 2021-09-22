@@ -1,12 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Demonstrates use of GLScatterPlotItem with rapidly-updating plots.
 
-"""
-
-## Add path to library (just for examples; you do not need this)
-# import initExample
-
+import serial
 from pyqtgraph.Qt import QtCore, QtGui
 import pyqtgraph.opengl as gl
 import numpy as np
@@ -19,6 +12,24 @@ w.setWindowTitle('pyqtgraph example: GLScatterPlotItem')
 
 g = gl.GLGridItem()
 w.addItem(g)
+
+arduinoComPort = "COM6"
+baudRate = 9600
+global serialPort
+serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
+
+serialPackets = []
+PACKET_SIZE = 3
+serialPacket = [0] * PACKET_SIZE
+
+pos = np.array([[0,0,0]])
+
+color = (1,1,1,1)
+size = 0.5
+
+global scttrPlt 
+scttrPlt = gl.GLScatterPlotItem(pos=pos, size=size, color=color, pxMode=False)
+w.addItem(scttrPlt)
 
 
 ##
@@ -57,61 +68,39 @@ w.addItem(g)
 #position of scatter in 3D
 # pos = np.array([[0,0,0] for i in X for j in Y for k in Z])
 
-pos = np.array([[0,0,0]])
-
-color = (1,1,1,1)
-size = 0.5
-
-scttrPlt = gl.GLScatterPlotItem(pos=pos, size=size, color=color, pxMode=False)
-w.addItem(scttrPlt)
-
-
-##
-##  Second example shows a volume of points with rapidly updating color
-##  and pxMode=True
-##
-
-# pos = np.random.random(size=(100000,3))
-# pos *= [10,-10,10]
-# pos[0] = (0,0,0)
-# color = np.ones((pos.shape[0], 4))
-# d2 = (pos**2).sum(axis=1)**0.5
-# size = np.random.random(size=pos.shape[0])*10
-# sp2 = gl.GLScatterPlotItem(pos=pos, color=(1,1,1,1), size=size)
-phase = 0.
-
-# w.addItem(sp2)
-
-
-##
-##  Third example shows a grid of points with rapidly updating position
-##  and pxMode = False
-##
-
-# pos3 = np.zeros((100,100,3))
-# pos3[:,:,:2] = np.mgrid[:100, :100].transpose(1,2,0) * [-0.1,0.1]
-# pos3 = pos3.reshape(10000,3)
-# d3 = (pos3**2).sum(axis=1)**0.5
-
-# sp3 = gl.GLScatterPlotItem(pos=pos3, color=(1,1,1,.3), size=0.1, pxMode=False)
-
-# w.addItem(sp3)
 
 
 def update():
+    while True:
+        ser_data = serialPort.read(1)
+        if (ser_data.decode('utf8') == '\\'):
+            print("header")
+            break
+
+    for i in range(PACKET_SIZE):
+        ser_data = serialPort.read(1)
+        serialPacket[i] = (ser_data.decode('utf8'))
+    
+    in_data = float(serialPacket)
+    scttrPlt.setData(pos=pos, color=color)
+    serialPacket = [0] * PACKET_SIZE
+    #serialPackets.append(serialPacket)
+
+    print("".join(serialPacket))
+    serialPort.write("".join(serialPacket).encode('utf8'))
     ## update volume colors
     
     
-    ## update surface positions and colors
-    global sp3, d3, pos3
-    z = -np.cos(d3*2+phase)
-    pos3[:,2] = z
-    color = np.empty((len(d3),4), dtype=np.float32)
-    color[:,3] = 0.3
-    color[:,0] = np.clip(z * 3.0, 0, 1)
-    color[:,1] = np.clip(z * 1.0, 0, 1)
-    color[:,2] = np.clip(z ** 3, 0, 1)
-    sp3.setData(pos=pos3, color=color)
+    # ## update surface positions and colors
+    # global sp3, d3, pos3
+    # z = -np.cos(d3*2+phase)
+    # pos3[:,2] = z
+    # color = np.empty((len(d3),4), dtype=np.float32)
+    # color[:,3] = 0.3
+    # color[:,0] = np.clip(z * 3.0, 0, 1)
+    # color[:,1] = np.clip(z * 1.0, 0, 1)
+    # color[:,2] = np.clip(z ** 3, 0, 1)
+    # sp3.setData(pos=pos3, color=color)
     
 t = QtCore.QTimer()
 t.timeout.connect(update)
