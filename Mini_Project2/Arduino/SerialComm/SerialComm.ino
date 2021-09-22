@@ -12,17 +12,21 @@ void setup()
 }
 
 int myPacket[PACKET_SIZE] = {1, 2, 3};
-bool success;
+bool response;
 
 void loop()
 {
+    transmitScan();
+}
+
+void transmitScan() {
     sendHeader();
     for (int i = 0; i < 100; i++) {
         for (int j = 0; j < PACKET_SIZE; j++) {
             myPacket[j] = i;
         }
-        success = sendPacket(myPacket);
-        digitalWrite(LED_BUILTIN, success);
+        response = sendPacket(myPacket);
+        digitalWrite(LED_BUILTIN, response);
     }
     sendFooter();
 }
