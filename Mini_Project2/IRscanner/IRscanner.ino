@@ -36,7 +36,8 @@ void setup() {
 }
 
 void loop() {
-  manualSet();
+  // manualSet();
+  scan();
   delay(50);
 }
 
@@ -75,16 +76,36 @@ int moving_avg(int data){
 }
 
 void scan() {
-  for (int pan = 0; pan < 180; pan++) {
-    for (int tilt = 0; tilt < 180; tilt++) {
+  int pan_step = 2;
+  int tilt_step = 1;
+  int n_steps = int(180 / tilt_step);
+  int tilt_sweep[n_steps];
+  int packet[3];
+
+  for (int pan_ind = 0; pan_ind < n_steps; pan_ind ++) {
+    int pan = pan_ind * tilt_step;
+    for (int tilt = 0; tilt < 180; tilt += tilt_step) {
+      packet[2] = tilt;
       Serial.print("pan: ");
-      pan_servo.write(pan);                  // sets the servo position according to the scaled value
+      Serial.print(pan);
+      pan_servo.write(pan);
+
+      packet[1] = pan;
       Serial.print(", tilt: ");
+      Serial.print(tilt);
       tilt_servo.write(tilt);
+
       delay(10);
+
+      packet[0] = readIR();
       Serial.print(", IR: ");
-      Serial.print(readIR());
+      Serial.print(packet[0]);
+      Serial.println("");
+
+      // tilt_sweep[pan_ind] = packet;
     }
+    // Serial.println(sizeof(tilt_sweep));
+    // Serial.println(String(packet));
   }
 }
 
