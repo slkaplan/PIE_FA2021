@@ -13,18 +13,21 @@ w.setWindowTitle('pyqtgraph example: GLScatterPlotItem')
 g = gl.GLGridItem()
 w.addItem(g)
 
-arduinoComPort = "COM6"
+arduinoComPort = "COM7"
 baudRate = 9600
 global serialPort
 serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
 
-serialPackets = []
-PACKET_SIZE = 3
-serialPacket = [0] * PACKET_SIZE
+# serialPackets = []
+# PACKET_SIZE = 3
+# global serialPacket 
 
+global pos
 pos = np.array([[0,0,0]])
 
+global color
 color = (1,1,1,1)
+global size 
 size = 0.5
 
 global scttrPlt 
@@ -71,23 +74,33 @@ w.addItem(scttrPlt)
 
 
 def update():
-    while True:
-        ser_data = serialPort.read(1)
-        if (ser_data.decode('utf8') == '\\'):
-            print("header")
-            break
+    PACKET_SIZE = 3
+    global buffer
+    buffer = ""
+    # serialPacket = [0] * PACKET_SIZE
+    # serialPacket = []
 
-    for i in range(PACKET_SIZE):
-        ser_data = serialPort.read(1)
-        serialPacket[i] = (ser_data.decode('utf8'))
     
-    in_data = float(serialPacket)
-    scttrPlt.setData(pos=pos, color=color)
-    serialPacket = [0] * PACKET_SIZE
+    ser_data = serialPort.read()
+    if (ser_data.decode('utf8') == '\\'):
+        ser_data = serialPort.read().decode('utf8')
+        while (ser_data != "\n"):
+            buffer += ser_data
+            ser_data = serialPort.read().decode('utf8')
+
+    # for i in range(PACKET_SIZE):
+    #     ser_data = serialPort.read(1)
+    #     serialPacket[i] = (ser_data.decode('utf8'))
+    
+    # in_data = int(serialPacket[0])
+    print(buffer)
+    # print(type(serialPacket))
+    # scttrPlt.setData(pos=pos, color=color)
+    
     #serialPackets.append(serialPacket)
 
-    print("".join(serialPacket))
-    serialPort.write("".join(serialPacket).encode('utf8'))
+    # print("".join(serialPacket))
+    # serialPort.write("".join(serialPacket).encode('utf8'))
     ## update volume colors
     
     
