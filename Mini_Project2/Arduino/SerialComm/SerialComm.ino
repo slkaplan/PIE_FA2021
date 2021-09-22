@@ -16,11 +16,12 @@ bool success;
 
 void loop()
 {
-    sendHeader();
+    
     for (int i = 0; i < 100; i++) {
         for (int j = 0; j < PACKET_SIZE; j++) {
             myPacket[j] = i;
         }
+        sendHeader();
         success = sendPacket(myPacket);
         digitalWrite(LED_BUILTIN, success);
     }
@@ -48,6 +49,7 @@ bool sendPacket(int packet[PACKET_SIZE])
 
 bool checkReceived(int sentPacket[PACKET_SIZE])
 {
+    return true;
     int receivedPacket[PACKET_SIZE];
 
     while (Serial.available() <= 0)
