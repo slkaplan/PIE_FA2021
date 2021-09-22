@@ -57,7 +57,10 @@ bool sendPacket(int packet[PACKET_SIZE])
     for (int i = 0; i < PACKET_SIZE; i++)
     {
         Serial.print(packet[i]);
-        Serial.print(',');
+
+        if (i < PACKET_SIZE - 1) {
+            Serial.print(',');
+        }
     }
     packetFooter();
     return checkReceived(packet);
