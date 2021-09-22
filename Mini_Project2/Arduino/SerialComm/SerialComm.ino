@@ -11,7 +11,7 @@ void setup()
     }
 }
 
-int myPacket[PACKET_SIZE] = {1, 2, 3};
+int myPacket[PACKET_SIZE];
 bool response;
 
 void loop()
@@ -20,7 +20,6 @@ void loop()
 }
 
 void transmitScan() {
-    sendHeader();
     for (int i = 0; i < 100; i++) {
         for (int j = 0; j < PACKET_SIZE; j++) {
             myPacket[j] = i;
@@ -28,7 +27,6 @@ void transmitScan() {
         response = sendPacket(myPacket);
         digitalWrite(LED_BUILTIN, response);
     }
-    sendFooter();
 }
 
 void sendHeader()
@@ -43,10 +41,13 @@ void sendFooter()
 
 bool sendPacket(int packet[PACKET_SIZE])
 {
+    sendHeader();
     for (int i = 0; i < PACKET_SIZE; i++)
     {
         Serial.print(packet[i]);
+        Serial.print(',');
     }
+    sendFooter();
     return checkReceived(packet);
 }
 
