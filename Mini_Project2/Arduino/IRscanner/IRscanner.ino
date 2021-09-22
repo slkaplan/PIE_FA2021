@@ -54,11 +54,6 @@ int readIR() {
 //  if (DISTANCE <= IR_MIN){
 //    DISTANCE = IR_MIN;
 //  }
-
-  // Serial.println(AVERAGED);
-  //Serial.println(AVERAGED);
-  // Serial.println(M_E);
-  //Serial.println(DISTANCE);
   return DISTANCE;
 }
 
@@ -69,7 +64,7 @@ int moving_avg(int data){
   INDEX = (INDEX+1) % WINDOW_SIZE;   // Increment the index, and wrap to 0 if it exceeds the window size
 
   AVERAGED = SUM / WINDOW_SIZE;      // Divide the sum of the window by the window size for the result
-
+  return AVERAGED;
 //  Serial.print(DISTANCE);
 //  Serial.print(",");
 
@@ -97,9 +92,10 @@ void scan() {
 
       delay(10);
 
-      packet[0] = readIR();
+      int IR = readIR();
+      packet[0] = IR;
       Serial.print(", IR: ");
-      Serial.print(packet[0]);
+      Serial.print(IR);
       Serial.println("");
 
       // tilt_sweep[pan_ind] = packet;
