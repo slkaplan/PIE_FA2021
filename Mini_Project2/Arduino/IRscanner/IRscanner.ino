@@ -105,6 +105,29 @@ void scan() {
   }
 }
 
+void scanAndTransmit() {
+  int pan_step = 2;
+  int tilt_step = 1;
+  int n_steps = int(180 / tilt_step);
+  int tilt_sweep[n_steps];
+  int packet[3];
+
+  for (int pan_ind = 0; pan_ind < n_steps; pan_ind ++) {
+    int pan = pan_ind * tilt_step;
+    send_header();
+    for (int tilt = 0; tilt < 180; tilt += tilt_step) {
+      packet[1] = pan;
+      packet[2] = tilt;
+      pan_servo.write(pan);
+      tilt_servo.write(tilt);
+
+      packet[0] = readIR();
+      response = sendPacket(packet);
+    }
+    send_footer();
+  }
+}
+
 void manualSet() {
   pan_pot_val = analogRead(pan_pot);            // reads the value of the potentiometer (value between 0 and 1023)
   tilt_pot_val = analogRead(tilt_pot);            // reads the value of the potentiometer (value between 0 and 1023)
