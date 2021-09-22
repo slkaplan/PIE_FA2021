@@ -17,13 +17,24 @@ bool success;
 void loop()
 {
     sendHeader();
-    success = sendPacket(myPacket);
-    digitalWrite(LED_BUILTIN, success);
+    for (int i = 0; i < 100; i++) {
+        for (int j = 0; j < PACKET_SIZE; j++) {
+            myPacket[j] = i;
+        }
+        success = sendPacket(myPacket);
+        digitalWrite(LED_BUILTIN, success);
+    }
+    sendFooter();
 }
 
 void sendHeader()
 {
     Serial.print('\\');
+}
+
+void sendFooter()
+{
+    Serial.print('\n');
 }
 
 bool sendPacket(int packet[PACKET_SIZE])
