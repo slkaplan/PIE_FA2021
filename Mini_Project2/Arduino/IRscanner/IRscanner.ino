@@ -43,7 +43,7 @@ void setup() {
 void loop() {
   // manualSet();
   scanAndTransmit();
-  delay(50);
+  delay(500);
 }
 
 int readIR() {
@@ -129,6 +129,8 @@ void scanAndTransmit() {
       packet[0] = readIR();
       bool response = sendPacket(packet);
       digitalWrite(LED_BUILTIN, response);
+
+      delay(100);
     }
     // packetFooter();
   }
