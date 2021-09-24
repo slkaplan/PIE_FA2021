@@ -32,11 +32,3 @@ while True:
     print(serialStrings)
     for string in serialStrings:
         serialPort.write(string.encode('utf8'))
-
-    # print(serialLine.split(','))
-
-    # for i in range(PACKET_SIZE):
-    # serialPackets.append(serialPacket)
-
-    # print("".join(serialPacket))
-    # serialPort.write("".join(serialPacket).encode('utf8'))
