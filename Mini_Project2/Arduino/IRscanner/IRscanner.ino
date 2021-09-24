@@ -119,7 +119,7 @@ void scanAndTransmit() {
 
   for (int pan_ind = 0; pan_ind < n_steps; pan_ind ++) {
     int pan = pan_ind * tilt_step;
-    packetHeader();
+    // packetHeader();
     for (int tilt = 0; tilt < 180; tilt += tilt_step) {
       packet[1] = pan;
       packet[2] = tilt;
@@ -130,7 +130,7 @@ void scanAndTransmit() {
       bool response = sendPacket(packet);
       digitalWrite(LED_BUILTIN, response);
     }
-    packetFooter();
+    // packetFooter();
   }
 }
 
