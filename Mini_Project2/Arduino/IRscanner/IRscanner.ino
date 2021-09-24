@@ -150,3 +150,40 @@ void manualSet() {
   pan_servo.write(pan_pot_val);                  // sets the servo position according to the scaled value
   tilt_servo.write(tilt_pot_val);
 }
+
+// function definitions from SerialComm.ino
+
+void sweepHeader()
+{
+    Serial.print('H');
+}
+
+void sweepFooter()
+{
+    Serial.print('F');
+}
+
+void packetHeader()
+{
+    Serial.print('\\');
+}
+
+void packetFooter()
+{
+    Serial.print('\n');
+}
+
+bool sendPacket(int packet[PACKET_SIZE])
+{
+    packetHeader();
+    for (int i = 0; i < PACKET_SIZE; i++)
+    {
+        Serial.print(packet[i]);
+
+        if (i < PACKET_SIZE - 1) {
+            Serial.print(',');
+        }
+    }
+    packetFooter();
+    return checkReceived(packet);
+}
