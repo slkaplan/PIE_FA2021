@@ -71,7 +71,7 @@ int moving_avg(int data){
 }
 
 void scanAndTransmit() {
-  int pan_range[2] = {0, 180};
+  int pan_range[2] = {50, 130};
   int tilt_range[2] = {0, 135};
 
   int pan_step = 3;
