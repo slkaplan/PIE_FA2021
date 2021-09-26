@@ -1,7 +1,7 @@
 
 import serial
 
-arduinoComPort = "COM6"
+arduinoComPort = "COM7"
 baudRate = 9600
 global serialPort
 serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
