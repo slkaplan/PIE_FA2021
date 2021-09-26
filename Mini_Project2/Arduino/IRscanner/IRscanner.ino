@@ -41,25 +41,20 @@ void setup() {
 }
 
 void loop() {
-  // manualSet();
   scanAndTransmit();
-  delay(500);
 }
 
 int readIR() {
-  int IR_RAW = analogRead(IR_PIN);
-  DISTANCE = 2906 * (pow(IR_RAW, -.899));
+  return analogRead(IR_PIN);
+}
 
-  // new eq:
-  //DISTANCE = 660
-  DISTANCE = moving_avg(DISTANCE);
-//  if (DISTANCE >= IR_MAX){
-//    DISTANCE = IR_MAX;
-//  }
-//  if (DISTANCE <= IR_MIN){
-//    DISTANCE = IR_MIN;
-//  }
-  return IR_RAW;
+int bradStuff() {
+    int N_SAMPLES = 3;
+    int output = 1025;
+    for (int i = 0; i < N_SAMPLES; i++) {
+        output = min(output, readIR());
+    }
+    return output;
 }
 
 int moving_avg(int data){
@@ -75,58 +70,23 @@ int moving_avg(int data){
 
 }
 
-// void scan() {
-//   int pan_step = 2;
-//   int tilt_step = 1;
-//   int n_steps = int(180 / tilt_step);
-//   int tilt_sweep[n_steps];
-//   int packet[3];
-
-//   for (int pan_ind = 0; pan_ind < n_steps; pan_ind ++) {
-//     int pan = pan_ind * tilt_step;
-//     for (int tilt = 0; tilt < 180; tilt += tilt_step) {
-//       packet[2] = tilt;
-//       // Serial.print("pan: ");
-//       // Serial.print(pan);
-//       // pan_servo.write(pan);
-
-//       packet[1] = pan;
-//       // Serial.print(", tilt: ");
-//       // Serial.print(tilt);
-//       // tilt_servo.write(tilt);
-
-//       delay(10);
-
-//       int IR = readIR();
-//       packet[0] = IR;
-//       // Serial.print(", IR: ");
-//       // Serial.print(IR);
-//       // Serial.println("");
-
-//       // tilt_sweep[pan_ind] = packet;
-//     }
-//     // Serial.println(sizeof(tilt_sweep));
-//     // Serial.println(String(packet));
-//   }
-// }
-
 void scanAndTransmit() {
-  int pan_step = 2;
-  int tilt_step = 1;
-  int n_steps = int(180 / tilt_step);
-  int tilt_sweep[n_steps];
+  int pan_range[2] = {0, 180};
+  int tilt_range[2] = {0, 135};
+
+  int pan_step = 3;
+  int tilt_step = 2;
+
   int packet[PACKET_SIZE];
 
-  for (int pan_ind = 0; pan_ind < n_steps; pan_ind ++) {
-    int pan = pan_ind * tilt_step;
-    // packetHeader();
-    for (int tilt = 0; tilt < 180; tilt += tilt_step) {
+  for (int pan = pan_range[0]; pan < pan_range[1]; pan += pan_step) {
+    for (int tilt = tilt_range[0]; tilt < tilt_range[1]; tilt += tilt_step) {
       packet[1] = pan;
       packet[2] = tilt;
       pan_servo.write(pan);
       tilt_servo.write(tilt);
 
-      packet[0] = readIR();
+      packet[0] = bradStuff();
       bool response = sendPacket(packet);
       digitalWrite(LED_BUILTIN, response);
 
