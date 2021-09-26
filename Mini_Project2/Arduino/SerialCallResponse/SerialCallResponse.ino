@@ -16,6 +16,7 @@ void setup() {
 void loop() {
     
     Serial.write(arr);
+    delay(10);
     
   
 }

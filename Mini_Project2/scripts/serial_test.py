@@ -1,7 +1,7 @@
 
 import serial
 
-arduinoComPort = "COM9"
+arduinoComPort = "COM7"
 baudRate = 9600
 ser = serial.Serial(arduinoComPort, baudRate, timeout=1)
 
@@ -15,12 +15,12 @@ while True:
   # ask for a line of data from the serial port, the ".decode()" converts the
   # data from an "array of bytes", to a string
   #
-  lineOfData = serialPort.readline().decode()
+  lineOfData = ser.readline().decode()
 
   #
   # check if data was received
   #
-  while ser.in_waiting:
+  if len(lineOfData) > 0:
       data = ser.readline().decode()
 
       print(data)

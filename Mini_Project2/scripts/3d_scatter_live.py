@@ -18,6 +18,7 @@ w.show()
 w.setWindowTitle('pyqtgraph example: GLScatterPlotItem')
 
 g = gl.GLGridItem()
+g.translate(0, 10, 0)
 w.addItem(g)
 
 

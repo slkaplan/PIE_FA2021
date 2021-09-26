@@ -5,38 +5,70 @@ import pyqtgraph.opengl as gl
 import numpy as np
 import time
 import sys
+import math
 
 
-    
+def correction(data):
+    print(data)
+    if data <= 0:
+        data = 0.0000001
+    if data >= 150:
+        data = 150
+    return 2906.5 * pow(data, -.899)
+
+def xyx_transfrom(ir, pan, tilt):
+    x = ir * math.cos(math.radians(pan))
+    y = ir * math.sin(math.radians(pan))
+    z = ir * math.sin(math.radians(tilt))
+
+    # print(f"DIST: {x} Y: {y} Z: {z}")
+
+    return [x,y,z]
 
 
 def update():
     global count
     global pos1
-    # while True:
-    #     ser_data = serialPort.read(1)
-    #     if (ser_data.decode('utf8') == '\\'):
-    #         print("header")
-    #         break
-
-    # for i in range(PACKET_SIZE):
-    #     ser_data = serialPort.read(1)
-    #     serialPacket[i] = (ser_data.decode('utf8'))
+    global serialPort
     
-    # in_data = float(serialPacket)
-    new = np.array([[count,count,count]])
-    pos1 = np.append(pos1, new, 0)
-    scttrPlt.setData(pos=pos1, color=color)
+    serialLine = []
+
+    while True:
+        ser_data = serialPort.read(1)
+        if (ser_data.decode('utf8') == '\\'):
+            break
+        print("WAITING")
+
+    while True:
+        ser_data = serialPort.read(1)
+        ser_char = ser_data.decode('utf8')
+        if (ser_char == '\n'):
+            break
+        serialLine.append(ser_char)
+
+    # create string from list in order to use split operator. Returns a list of strings
+    serialStrings = "".join(serialLine).split(',')
+    serialLine = []
+
+    ir_raw = int(serialStrings[0])
+    ir_corrected = correction(ir_raw)
+    pan_angle = int(serialStrings[1]) - 84
+    tilt_angle = 90 - int(serialStrings[2]) + 13
+
+    x, y, z = xyx_transfrom(ir_corrected, pan_angle, tilt_angle)
+    
+
+    for string in serialStrings:
+        serialPort.write(string.encode('utf8'))
+    
+
+
+    # graphing stuff!
+    new = np.array([[x,y,z]]) # new 1x3
+    pos1 = np.append(pos1, new, 0) # append to current scatter array
+    scttrPlt.setData(pos=pos1, color=color) # reset data
     count = count + 1
-    print(count)
-    # serialPacket = [0] * PACKET_SIZE
-    #serialPackets.append(serialPacket)
-
-    # print("".join(serialPacket))
-    # serialPort.write("".join(serialPacket).encode('utf8'))
     
-
-
 
 
 if __name__ == '__main__':
@@ -47,12 +79,13 @@ if __name__ == '__main__':
     w.setWindowTitle('pyqtgraph example: GLScatterPlotItem')
 
     g = gl.GLGridItem()
+    g.translate(0, -10, 0)
+    g.setSize(200,200,200)
     w.addItem(g)
 
-    arduinoComPort = "COM6"
+    arduinoComPort = "COM7"
     baudRate = 9600
-    global serialPort
-    # serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
+    serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
 
     
     count = 0
@@ -72,7 +105,9 @@ if __name__ == '__main__':
 
     t = QtCore.QTimer()
     t.timeout.connect(update)
+
     t.start(50)
+
 
 
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
