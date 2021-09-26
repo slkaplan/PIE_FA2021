@@ -205,7 +205,7 @@ bool checkReceived(int sentPacket[PACKET_SIZE])
     {
         if (DEBUG) {
             Serial.print("."); // wait for a packet response
-            delay(200);
+            delay(50);
         }
     }
     for (int i = 0; i < PACKET_SIZE; i++)
