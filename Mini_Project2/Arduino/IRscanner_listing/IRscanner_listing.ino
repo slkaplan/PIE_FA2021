@@ -1,23 +1,18 @@
 #include <Servo.h>
-#include <math.h>
 
 #define DEBUG 0
 
-int IR_MAX = 150;
-int IR_MIN = 20;
+Servo pan_servo;
+Servo tilt_servo;
 
-int DISTANCE;
+const int pan_range[2] = {50, 130};
+const int tilt_range[2] = {0, 135};
+
+const int pan_step = 3;
+const int tilt_step = 2;
 
 #define IR_PIN A0
 #define PACKET_SIZE 3
-
-// MOVING AVERAGE
-#define WINDOW_SIZE 5
-int INDEX = 0;
-int SUM = 0;
-int READINGS[WINDOW_SIZE];
-int AVERAGED = 0;
-
 
 void setup() {
   Serial.begin(9600);
@@ -32,7 +27,7 @@ int readIR() {
   return analogRead(IR_PIN);
 }
 
-int bradStuff() {
+int filterMin() {
     int N_SAMPLES = 3;
     int output = 1025;
     for (int i = 0; i < N_SAMPLES; i++) {
@@ -41,26 +36,7 @@ int bradStuff() {
     return output;
 }
 
-int moving_avg(int data){
-  SUM = SUM - READINGS[INDEX];       // Remove the oldest entry from the sum
-  READINGS[INDEX] = DISTANCE;           // Add the newest reading to the window
-  SUM = SUM + DISTANCE;                 // Add the newest reading to the sum
-  INDEX = (INDEX+1) % WINDOW_SIZE;   // Increment the index, and wrap to 0 if it exceeds the window size
-
-  AVERAGED = SUM / WINDOW_SIZE;      // Divide the sum of the window by the window size for the result
-  return AVERAGED;
-//  Serial.print(DISTANCE);
-//  Serial.print(",");
-
-}
-
 void scanAndTransmit() {
-  int pan_range[2] = {50, 130};
-  int tilt_range[2] = {0, 135};
-
-  int pan_step = 3;
-  int tilt_step = 2;
-
   int packet[PACKET_SIZE];
   bool response = false;
 
@@ -71,56 +47,20 @@ void scanAndTransmit() {
       pan_servo.write(pan);
       tilt_servo.write(tilt);
 
-      packet[0] = bradStuff();
+      packet[0] = filterMin();
 
-      response = sendPacket(packet);
+      response = sendPacket(packet); // returns true if the handshake is successful
       digitalWrite(LED_BUILTIN, response);
 
-      // if response was false, re-send the packet until true
+      // if the response was bad, re-send the packet until true
       while (response == false) {
         delay(100);
         response = sendPacket(packet);
       }
 
-      delay(100);
+      delay(100); // helps ensure that the serial buffer doesn't overflow too quickly
     }
-    // packetFooter();
   }
-}
-
-void manualSet() {
-  pan_pot_val = analogRead(pan_pot);            // reads the value of the potentiometer (value between 0 and 1023)
-  tilt_pot_val = analogRead(tilt_pot);            // reads the value of the potentiometer (value between 0 and 1023)
-
-  pan_pot_median.add(pan_pot_val);
-  pan_pot_val = pan_pot_median.getMedian();
-  tilt_pot_median.add(tilt_pot_val);
-  tilt_pot_val = tilt_pot_median.getMedian();
-
-  pan_pot_val = map(pan_pot_val, 0, 1023, 0, 180);     // scale it to use it with the servo (value between 0 and 180)
-  tilt_pot_val = map(tilt_pot_val, 0, 1023, 0, 180);
-
-  Serial.print("pan_pot_val = ");
-  Serial.print(pan_pot_val);
-  Serial.print(",    tilt_pot_val = ");
-  Serial.println(tilt_pot_val);
-
-  // tilt_servo.write(90); // test case
-
-  pan_servo.write(pan_pot_val);                  // sets the servo position according to the scaled value
-  tilt_servo.write(tilt_pot_val);
-}
-
-// function definitions from SerialComm.ino
-
-void sweepHeader()
-{
-    Serial.print('H');
-}
-
-void sweepFooter()
-{
-    Serial.print('F');
 }
 
 void packetHeader()
@@ -147,7 +87,6 @@ bool sendPacket(int packet[PACKET_SIZE])
     packetFooter();
     return checkReceived(packet);
 }
-
 
 bool checkReceived(int sentPacket[PACKET_SIZE])
 {
