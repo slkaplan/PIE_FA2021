@@ -78,6 +78,7 @@ void scanAndTransmit() {
   int tilt_step = 2;
 
   int packet[PACKET_SIZE];
+  bool response = false;
 
   for (int pan = pan_range[0]; pan < pan_range[1]; pan += pan_step) {
     for (int tilt = tilt_range[0]; tilt < tilt_range[1]; tilt += tilt_step) {
@@ -87,8 +88,15 @@ void scanAndTransmit() {
       tilt_servo.write(tilt);
 
       packet[0] = bradStuff();
-      bool response = sendPacket(packet);
+
+      response = sendPacket(packet);
       digitalWrite(LED_BUILTIN, response);
+
+      // if response was false, re-send the packet until true
+      while (response == false) {
+        delay(100);
+        response = sendPacket(packet);
+      }
 
       delay(100);
     }
@@ -161,6 +169,7 @@ bool checkReceived(int sentPacket[PACKET_SIZE])
 {
     int receivedPacket[PACKET_SIZE];
 
+    //delay until any packet is received
     while (Serial.available() <= 0)
     {
         if (DEBUG) {
@@ -168,6 +177,8 @@ bool checkReceived(int sentPacket[PACKET_SIZE])
             delay(50);
         }
     }
+
+    // check if the received packet matches the sent one
     for (int i = 0; i < PACKET_SIZE; i++)
     {
         if (Serial.available() <= 0) {
@@ -197,7 +208,7 @@ bool checkReceived(int sentPacket[PACKET_SIZE])
         Serial.println("");
     }
 
-        flushBuffer();
+    flushBuffer(); // after reading the first characters in PACKET_SIZE, ignore the rest
     return equalArrays(receivedPacket, sentPacket);
 }
 
