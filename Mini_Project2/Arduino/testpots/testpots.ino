@@ -14,20 +14,20 @@ void setup() {
 }
 
 void loop() {
-    int pot1 = analogRead(A1);
-    int pot2 = analogRead(A2);
+    int pot_pan = analogRead(A1);
+    int pot_tilt = analogRead(A2);
 
-    pot1 = map(pot1, 0, 1023, 0, 180);
-    pot2 = map(pot2, 0, 1023, 0, 180);
+    pot_pan = map(pot_pan, 0, 1023, 0, 180);
+    pot_tilt = map(pot_tilt, 0, 1023, 0, 180);
 
-    Serial.print("Pot 1:");
-    Serial.print(pot1);
-    Serial.print(",    Pot 2:");
-    Serial.print(pot2);
+    Serial.print("Pan: ");
+    Serial.print(pot_pan);
+    Serial.print(",    Tilt: ");
+    Serial.print(pot_tilt);
     Serial.println("");
 
-    pan_servo.write(pot1);
-    tilt_servo.write(pot2);
+    pan_servo.write(pot_pan);
+    tilt_servo.write(pot_tilt);
 
     delay(200);
 }

@@ -12,9 +12,15 @@ def correction(data):
     print(data)
     if data <= 0:
         data = 0.0000001
-    if data >= 150:
-        data = 150
-    return 2906.5 * pow(data, -.899)
+
+    foo = 2906.5 * pow(data, -.899)
+
+    # if foo <= 20:
+    #     foo = 20
+    # if foo >= 150:
+    #     foo = 150
+
+    return foo
 
 def xyx_transfrom(ir, pan, tilt):
     x = ir * math.cos(math.radians(pan))
@@ -53,7 +59,7 @@ def update():
     ir_raw = int(serialStrings[0])
     ir_corrected = correction(ir_raw)
     pan_angle = int(serialStrings[1]) - 84
-    tilt_angle = 90 - int(serialStrings[2]) + 13
+    tilt_angle = int(serialStrings[2]) 
 
     x, y, z = xyx_transfrom(ir_corrected, pan_angle, tilt_angle)
     
