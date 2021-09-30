@@ -63,7 +63,7 @@ def update():
     ir_raw = int(serialStrings[0])
 
     ir_corrected = correction(ir_raw)
-    pan_angle = int(serialStrings[1]) - 84
+    pan_angle = int(serialStrings[1]) - 80
     tilt_angle = int(serialStrings[2])
 
     x, y, z = xyx_transfrom(ir_corrected, pan_angle, tilt_angle)
