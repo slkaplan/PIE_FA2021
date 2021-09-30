@@ -13,7 +13,8 @@ def correction(data):
     if data <= 0:
         data = 0.0000001
 
-    foo = 2906.5 * pow(data, -.899)
+    # foo = 2906.5 * pow(data, -.899)
+    foo = 15954 * pow(data, -1.087)
 
     # if foo <= 20:
     #     foo = 20
@@ -23,9 +24,12 @@ def correction(data):
     return foo
 
 def xyx_transfrom(ir, pan, tilt):
-    x = ir * math.cos(math.radians(pan))
-    y = ir * math.sin(math.radians(pan))
-    z = ir * math.sin(math.radians(tilt))
+    pan = math.radians(pan)
+    tilt = math.radians(tilt)
+
+    x = ir * math.cos(pan)
+    y = ir * math.sin(pan)# / math.cos(pan)
+    z = ir * math.cos(tilt)
 
     # print(f"DIST: {x} Y: {y} Z: {z}")
 
@@ -36,7 +40,7 @@ def update():
     global count
     global pos1
     global serialPort
-    
+
     serialLine = []
 
     while True:
@@ -57,16 +61,17 @@ def update():
     serialLine = []
 
     ir_raw = int(serialStrings[0])
+
     ir_corrected = correction(ir_raw)
     pan_angle = int(serialStrings[1]) - 84
-    tilt_angle = int(serialStrings[2]) 
+    tilt_angle = int(serialStrings[2])
 
     x, y, z = xyx_transfrom(ir_corrected, pan_angle, tilt_angle)
-    
+
 
     for string in serialStrings:
         serialPort.write(string.encode('utf8'))
-    
+
 
 
     # graphing stuff!
@@ -74,7 +79,7 @@ def update():
     pos1 = np.append(pos1, new, 0) # append to current scatter array
     scttrPlt.setData(pos=pos1, color=color) # reset data
     count = count + 1
-    
+
 
 
 if __name__ == '__main__':
@@ -93,7 +98,7 @@ if __name__ == '__main__':
     baudRate = 9600
     serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
 
-    
+
     count = 0
 
     serialPackets = []
@@ -105,7 +110,7 @@ if __name__ == '__main__':
     color = (1,1,1,1)
     size = 0.5
 
-    global scttrPlt 
+    global scttrPlt
     scttrPlt = gl.GLScatterPlotItem(pos=pos1, size=size, color=color, pxMode=False)
     w.addItem(scttrPlt)
 
