@@ -72,10 +72,10 @@ int moving_avg(int data){
 
 void scanAndTransmit() {
   int pan_range[2] = {50, 130};
-  int tilt_range[2] = {0, 135};
+  int tilt_range[2] = {0, 105};
 
-  int pan_step = 3;
-  int tilt_step = 2;
+  int pan_step = 1;
+  int tilt_step = 1;
 
   int packet[PACKET_SIZE];
 
@@ -86,11 +86,15 @@ void scanAndTransmit() {
       pan_servo.write(pan);
       tilt_servo.write(tilt);
 
+      if (tilt == tilt_range[0]) {
+        delay(500); // give the servo time to get back to the top position
+      }
+
+      delay(100);
+
       packet[0] = bradStuff();
       bool response = sendPacket(packet);
       digitalWrite(LED_BUILTIN, response);
-
-      delay(100);
     }
     // packetFooter();
   }
