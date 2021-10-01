@@ -21,15 +21,29 @@ def correction(data):
         #if > 150, make 150 as that is the max range of sensor
         data = 150
 
+<<<<<<< HEAD
     # this is our calibration equation
     return 2906.5 * pow(data, -.899)
+=======
+    # foo = 2906.5 * pow(data, -.899)
+    foo = 15954 * pow(data, -1.087)
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
 
 
 def xyx_transfrom(ir, pan, tilt):
+<<<<<<< HEAD
     # this function takes polar coords (dist, pan+tilt angle) and converts to cartesian coords
     x = ir * math.cos(math.radians(pan))
     y = ir * math.sin(math.radians(pan))
     z = ir * math.sin(math.radians(tilt))
+=======
+    pan = math.radians(pan)
+    tilt = math.radians(tilt)
+
+    x = ir * math.cos(pan)
+    y = ir * math.sin(pan)# / math.cos(pan)
+    z = ir * math.cos(tilt)
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
 
     return [x,y,z]
 
@@ -40,8 +54,12 @@ def update():
     global count
     global pos1
     global serialPort
+<<<<<<< HEAD
     
     # list for Arduino serial data
+=======
+
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
     serialLine = []
 
     # this is the big Arduino comm loop
@@ -65,24 +83,43 @@ def update():
     # must convert strings to nums to actual nums!
     # also applying servo offsets
     ir_raw = int(serialStrings[0])
+
     ir_corrected = correction(ir_raw)
+<<<<<<< HEAD
     pan_angle = int(serialStrings[1]) - 84 
     tilt_angle = 90 - int(serialStrings[2]) + 13
+=======
+    pan_angle = int(serialStrings[1]) - 80
+    tilt_angle = int(serialStrings[2])
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
 
     # convert from polar to cartesian
     x, y, z = xyx_transfrom(ir_corrected, pan_angle, tilt_angle)
+<<<<<<< HEAD
     
     # write data back to Arduino for error checking
+=======
+
+
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
     for string in serialStrings:
         serialPort.write(string.encode('utf8'))
-    
+
 
 
     # graphing stuff!
+<<<<<<< HEAD
     new = np.array([[x,y,z]]) # creates new 1x3 array
     pos1 = np.append(pos1, new, 0) # append to current scatter array (holds all data)
     scttrPlt.setData(pos=pos1, color=color) # set the updated data to the scatter plot object
     
+=======
+    new = np.array([[x,y,z]]) # new 1x3
+    pos1 = np.append(pos1, new, 0) # append to current scatter array
+    scttrPlt.setData(pos=pos1, color=color) # reset data
+    count = count + 1
+
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
 
 
 if __name__ == '__main__':
@@ -104,15 +141,29 @@ if __name__ == '__main__':
     baudRate = 9600
     serialPort = serial.Serial(arduinoComPort, baudRate, timeout=1)
 
+<<<<<<< HEAD
     # creates original scatter data array
+=======
+
+    count = 0
+
+    serialPackets = []
+    PACKET_SIZE = 3
+    serialPacket = [0] * PACKET_SIZE
+
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
     pos1 = np.array([[0,0,0]])
 
     # sets color to white
     color = (1,1,1,1)
     size = 0.5
 
+<<<<<<< HEAD
     # needs to be global for update function to work
     global scttrPlt 
+=======
+    global scttrPlt
+>>>>>>> 1a4641863c65a991b21af562fed10480fa5d533d
     scttrPlt = gl.GLScatterPlotItem(pos=pos1, size=size, color=color, pxMode=False)
     w.addItem(scttrPlt)
 

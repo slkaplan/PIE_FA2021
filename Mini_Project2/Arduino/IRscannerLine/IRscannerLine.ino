@@ -38,10 +38,12 @@ void setup() {
   tilt_servo.attach(10);
 
   pinMode(LED_BUILTIN, OUTPUT);
+//   scanAndTransmit();
 }
 
 void loop() {
   scanAndTransmit();
+  delay(500);
 }
 
 int readIR() {
@@ -71,21 +73,25 @@ int moving_avg(int data){
 }
 
 void scanAndTransmit() {
-  int pan_range[2] = {50, 130};
+  int pan_range[2] = {55, 125};
   int tilt_range[2] = {0, 105};
 
   int pan_step = 1;
   int tilt_step = 1;
+  int tilt = 80;
 
   int packet[PACKET_SIZE];
 
   for (int pan = pan_range[0]; pan < pan_range[1]; pan += pan_step) {
-    for (int tilt = tilt_range[0]; tilt < tilt_range[1]; tilt += tilt_step) {
+    // for (int tilt = tilt_range[0]; tilt < tilt_range[1]; tilt += tilt_step) {
       packet[1] = pan;
       packet[2] = tilt;
       pan_servo.write(pan);
       tilt_servo.write(tilt);
 
+      if (pan == pan_range[0]) {
+        delay(500); // give the servo time to get back to the top position
+      }
       if (tilt == tilt_range[0]) {
         delay(500); // give the servo time to get back to the top position
       }
@@ -95,7 +101,7 @@ void scanAndTransmit() {
       packet[0] = bradStuff();
       bool response = sendPacket(packet);
       digitalWrite(LED_BUILTIN, response);
-    }
+    // }
     // packetFooter();
   }
 }
