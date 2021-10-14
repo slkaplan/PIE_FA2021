@@ -7,9 +7,15 @@ Adafruit_DCMotor *MotorL = AFMS.getMotor(1);
 Adafruit_DCMotor *MotorR = AFMS.getMotor(2);
 
 int sensorLPin = A0;    // select the input pin for the potentiometer
-int sensorRPin = A1;    // select the input pin for the potentiometer
+int sensorRPin = A3;    // select the input pin for the potentiometer
+int sensorXLPin = A1;
+int sensorXRPin = A2;
+
 int sensorLValue = 0;  // variable to store the value coming from the sensor
 int sensorRValue = 0;
+int sensorXLValue = 0;
+int sensorXRValue = 0;
+
 byte ledLPin = 7;
 byte ledRPin = 8;
 
@@ -53,6 +59,8 @@ void loop() {
   // Read the Sensors/update data
   sensorLValue = analogRead(sensorLPin);
   sensorRValue = analogRead(sensorRPin);
+  sensorXLValue = analogRead(sensorXRPin);
+  sensorXRValue = analogRead(sensorXLPin);
 
   // Act
   if(!pause){
@@ -94,6 +102,34 @@ void linefollow2(int speed, int range) {
     MotorL->setSpeed(speed + speed*errorPercent);
   }
   else if (sensorRValue < range && sensorLValue > range) {
+    MotorR->setSpeed(speed + speed*errorPercent);
+    MotorL->setSpeed(speed - speed*errorPercent);
+  }
+  else {
+    MotorR->setSpeed(speed);
+    MotorL->setSpeed(speed);
+  }
+}
+
+// This acts similar to linefollow2, except with 4 sensors. The idea is that the outer sensors can catch
+// any cases where the robot cannot turn quickly enough to follow the line. Any black on the outer sensors
+// results in a much bigger turning response from the robot, designated at errorPercent * expo. This should
+// allow the robot to handle tighter corners at faster baseline speeds.
+
+void linefollow3(int speed, int range, int expo) {
+  if (sensorXRValue > range) {
+    MotorR->setSpeed(speed - speed*(expo*errorPercent));
+    MotorL->setSpeed(speed + speed*(expo*errorPercent));
+  }
+  else if (sensorXLValue) > range) {
+    MotorR->setSpeed(speed - speed*(expo*errorPercent));
+    MotorL->setSpeed(speed + speed*(expo*errorPercent));
+  }
+  else if (sensorRValue > range && sensorLValue < range) {
+    MotorR->setSpeed(speed - speed*errorPercent);
+    MotorL->setSpeed(speed + speed*errorPercent);
+  }
+  else if (sensorRValue < range && sensorLValue) > range) {
     MotorR->setSpeed(speed + speed*errorPercent);
     MotorL->setSpeed(speed - speed*errorPercent);
   }
