@@ -23,9 +23,9 @@ bool mosfetLOn = true;
 bool mosfetROn = true;    
 bool pause = false;          // Uses char 'p'
 float baseSpeed = 40;       // Uses char 'b'
-float errorPercent = 0.3;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
+float errorPercent = 0.6;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
 float leftRightMatch = 1.0; // If one wheel drives faster
-int sensorCutoff = 600;     // Uses char 'c'  IR sensor cutoff, same for both sensors
+int sensorCutoff = 500;     // Uses char 'c'  IR sensor cutoff, same for both sensors
 int mode = 0;               // Uses char 'm' to change
     
 // Variables for Serial Editing
