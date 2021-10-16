@@ -22,9 +22,9 @@ byte ledRPin = 8;
 bool mosfetLOn = true;    
 bool mosfetROn = true;    
 bool pause = false;          // Uses char 'p'
-float baseSpeed = 55;       // Uses char 'b'
-float errorPercent = 0.7;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
-float errorPercent2 = 1;
+float baseSpeed = 60;       // Uses char 'b'
+float errorPercent = 0.5;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
+float errorPercent2 = 0.8;
 float reduction = 0;
 float leftRightMatch = 1.0; // If one wheel drives faster
 int sensorCutoff = 600;     // Uses char 'c'  IR sensor cutoff, same for both sensors
@@ -138,6 +138,11 @@ void linefollow2(int speed, int range) {
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
+    while(sensorRValue < range && sensorLValue < range){
+      delay(1);
+      sensorRValue = analogRead(sensorRPin);
+      sensorLValue = analogRead(sensorLPin);
+    }
   }
   // If outer left sensor hits, sharp right
   else if (sensorXLValue > range) {
@@ -146,6 +151,11 @@ void linefollow2(int speed, int range) {
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
+    while(sensorLValue < range && sensorRValue < range){
+      delay(1);
+      sensorLValue = analogRead(sensorLPin);
+      sensorRValue = analogRead(sensorRPin);
+    }
   }
   
   else if (sensorRValue > range && sensorLValue < range) {
