@@ -9,7 +9,7 @@ Adafruit_DCMotor *MotorR = AFMS.getMotor(2);
 int sensorLPin = A1;    // select the input pin for the potentiometer
 int sensorRPin = A2;    // select the input pin for the potentiometer
 int sensorXLPin = A0;
-int sensorXRPin = A1;
+int sensorXRPin = A3;
 
 int sensorLValue = 0;  // variable to store the value coming from the sensor
 int sensorRValue = 0;
@@ -22,10 +22,12 @@ byte ledRPin = 8;
 bool mosfetLOn = true;    
 bool mosfetROn = true;    
 bool pause = false;          // Uses char 'p'
-float baseSpeed = 40;       // Uses char 'b'
-float errorPercent = 0.6;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
+float baseSpeed = 55;       // Uses char 'b'
+float errorPercent = 0.7;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
+float errorPercent2 = 1;
+float reduction = 0;
 float leftRightMatch = 1.0; // If one wheel drives faster
-int sensorCutoff = 500;     // Uses char 'c'  IR sensor cutoff, same for both sensors
+int sensorCutoff = 600;     // Uses char 'c'  IR sensor cutoff, same for both sensors
 int mode = 0;               // Uses char 'm' to change
     
 // Variables for Serial Editing
@@ -51,8 +53,6 @@ void setup() {
 
 void loop() {
  
-  MotorR->run(FORWARD);
-  MotorL->run(BACKWARD);
   // Grab Serial Data and update values
   recvWithStartEndMarkers();
   updateParams();
@@ -60,8 +60,8 @@ void loop() {
   // Read the Sensors/update data
   sensorLValue = analogRead(sensorLPin);
   sensorRValue = analogRead(sensorRPin);
-  sensorXLValue = analogRead(sensorXRPin);
-  sensorXRValue = analogRead(sensorXLPin);
+  sensorXLValue = analogRead(sensorXLPin);
+  sensorXRValue = analogRead(sensorXRPin);
 
   // Act
   if(!pause){
@@ -78,6 +78,7 @@ void loop() {
     else if(mode == 2){
      //TODO
     }
+    
   }
 }
 
@@ -99,20 +100,74 @@ void linefollow1(int speed, int range) {
 // This operates on the same premise as above but rather than on or off, it applies a negative and 
 // positive correction to each wheel, which may make things smoother
 void linefollow2(int speed, int range) {
-  if (sensorRValue > range && sensorLValue < range) {
-    MotorR->setSpeed(speed - speed*errorPercent);
+  Serial.print(sensorXLValue);
+  Serial.print(" ");
+  Serial.print(sensorLValue);
+  Serial.print(" ");
+  Serial.print(sensorRValue);
+  Serial.print(" ");
+  Serial.println(sensorXRValue);
+  // If both right sensors hit, sharp right corner. Turn right until a left sensor hits
+  if (sensorXRValue > range && sensorRValue > range) {
+    MotorR->setSpeed(0);// + speed*errorPercent2);
+    MotorL->setSpeed(speed);// - speed*errorPercent2);
+    //Serial.println("Turning Left");
+    MotorR->run(BACKWARD);
+    MotorL->run(BACKWARD);
+    while(sensorLValue < range){
+      delay(1);
+      sensorLValue = analogRead(sensorLPin);
+    }
+  }
+  // If both left sensors hit, sharp left corner. Turn right until a right sensor hits
+  else if (sensorXLValue > range && sensorLValue > range) {
+    MotorR->setSpeed(speed);// - speed*errorPercent2);//speed - speed*errorPercent2);
+    MotorL->setSpeed(0);// + speed*errorPercent2);// + speed*errorPercent2);
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(FORWARD);
+    while(sensorRValue < range){
+      delay(1);
+      sensorRValue = analogRead(sensorRPin);
+    }
+  }
+  // If outer right sensor hits, sharp left
+  else if (sensorXRValue > range) {
+    MotorR->setSpeed(speed - speed*(errorPercent2));//speed - speed*errorPercent2);
+    MotorL->setSpeed(speed + speed*(errorPercent2));// + speed*errorPercent2);
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+  }
+  // If outer left sensor hits, sharp right
+  else if (sensorXLValue > range) {
+    MotorR->setSpeed(speed + speed*(errorPercent2));// + speed*errorPercent2);
+    MotorL->setSpeed(speed - speed*(errorPercent2));//speed - speed*errorPercent2);
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+  }
+  
+  else if (sensorRValue > range && sensorLValue < range) {
+    MotorR->setSpeed(speed - speed*(errorPercent/1.5));
     MotorL->setSpeed(speed + speed*errorPercent);
-    Serial.println("Turning Left");
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
   }
   else if (sensorRValue < range && sensorLValue > range) {
     MotorR->setSpeed(speed + (speed*errorPercent));
-    MotorL->setSpeed(speed - (speed*errorPercent));
-    Serial.println("Turning Right");
+    MotorL->setSpeed(speed - (speed*(errorPercent/1.5)));
+    //Serial.println("Turning Right");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
   }
   else {
-    MotorR->setSpeed(speed);
-    MotorL->setSpeed(speed);
-    Serial.println("straight");
+    MotorR->setSpeed(speed*1.2);
+    MotorL->setSpeed(speed*1.2);
+    //Serial.println("straight");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
   }
 }
 
@@ -121,7 +176,7 @@ void linefollow2(int speed, int range) {
 // results in a much bigger turning response from the robot, designated at errorPercent * expo. This should
 // allow the robot to handle tighter corners at faster baseline speeds.
 
-void linefollow3(int speed, int range, int expo) {
+void linefollow3(int speed, int range, float expo) {
   if (sensorXRValue > range) {
     MotorR->setSpeed(speed - speed*(expo*errorPercent));
     MotorL->setSpeed(speed + speed*(expo*errorPercent));
@@ -138,10 +193,37 @@ void linefollow3(int speed, int range, int expo) {
     MotorR->setSpeed(speed + speed*errorPercent);
     MotorL->setSpeed(speed - speed*errorPercent);
   }
-  else {
+  /*else {
     MotorR->setSpeed(speed);
     MotorL->setSpeed(speed);
-  }
+  }*/
+}
+// IN PROGRESS (An idea I had that I didnt yet implement -Tigey)
+void linefollow4(int speed, int range) {
+  Serial.print(sensorXLValue);
+  Serial.print(" ");
+  Serial.print(sensorLValue);
+  Serial.print(" ");
+  Serial.print(sensorRValue);
+  Serial.print(" ");
+  Serial.print(sensorXRValue);
+  Serial.print(" ");
+  Serial.print(sensorLValue + 2*sensorXLValue);
+  Serial.print(" ");
+  Serial.println(sensorRValue + 2*sensorXRValue);
+  
+  int baseline = sensorRValue + 2*sensorXRValue + sensorLValue + 2*sensorXLValue;
+  int binXR = 0;
+  int binR = 0;
+  int binL = 0;
+  int binXL = 0;
+  /*if(sensorXRValue > range{  int binXR = 1;  }
+  if sensorRValue > range{  int binR = 1;  }
+  if sensorLValue > range{  int binL = 1;  }
+  if sensorXLValue > range{  int binXL = 1;  }
+  
+  MotorR->setSpeed(speed * binXR);
+  MotorL->setSpeed(speed - speed*((sensorLValue + 2*sensorXLValue)/(baseline)));*/
 }
 
 void recvWithStartEndMarkers() {
