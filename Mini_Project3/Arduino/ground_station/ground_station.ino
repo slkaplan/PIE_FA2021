@@ -52,7 +52,7 @@ void loop() {
     
 
   String radio_msg = ""; 
-  radio_msg = radio_msg + p0_val + "," + p1_val + "," + p2_val + "," + p3_val + "," + "\n";
+  radio_msg = radio_msg + "b" + p0_val + "," + p1_val + "," + p2_val + "," + p3_val + "," + "\n";
   char copy[50];
   radio_msg.toCharArray(copy, 50);
   HC12.write(copy);

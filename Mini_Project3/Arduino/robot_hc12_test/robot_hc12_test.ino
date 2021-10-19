@@ -47,75 +47,68 @@ void setup() {
 
 void loop() {
 
-//    while (HC12.available()) {        // If HC-12 has data
-//    Serial.println(HC12.read());      // Send the data to Serial monitor
-//  }
+
   
-//    recvWithStartEndMarkers();
-//    if (newData == true) {
-//        strcpy(tempChars, receivedChars);
-//            // this temporary copy is necessary to protect the original data
-//            //   because strtok() used in parseData() replaces the commas with \0
-//        parseData();
-//        useParsedData();
-//        newData = false;
-//    }
+    recvWithStartEndMarkers();
+    if (newData == true) {
+        strcpy(tempChars, receivedChars);
+            // this temporary copy is necessary to protect the original data
+            //   because strtok() used in parseData() replaces the commas with \0
+        parseData();
+        useParsedData();
+        newData = false;
+    }
 
 
-      while (HC12.available())
-      {
-          char character = HC12.read(); // Receive a single character from the software serial port
-          Data.concat(character); // Add the received character to the receive buffer
-          if (character == '\n')
-          {
-              
-              //Serial.print(Data);
-
-              int str_len = Data.length() + 1; 
-
-              // Prepare the character array (the buffer) 
-              char char_array[str_len];
-              
-              // Copy it over 
-              Data.toCharArray(char_array, str_len);
-              
-              byte index = 0;
-              ptr = strtok(char_array, ",");  // delimiter
-              while (ptr != NULL)
-              {
-                strings[index] = ptr;
-                index++;
-                ptr = strtok(NULL, ",");
-              }
-//              A = strings[0];
-//              B = strings[1];
-//              C = strings[2];
-//              D = strings[3];
-              for (int n = 0; n < index; n++)
-               {  
-                  if(n==0){
-                    A=atoi(strings[n]);
-                      }
-//                  if(n==1){B=strings[n]};
-//                  if(n==2){C=strings[n]};
-//                  if(n==3){D=strings[n]};
-//                  Serial.print(n);
-//                  Serial.print("  ");
-//                  Serial.println(strings[n]);
-               }
-  
-              // Clear receive buffer so we're ready to receive the next line
-              Data = "";
-              //delay(500);
-          }
-      }
+//      while (HC12.available())
+//      {
+//          char character = HC12.read(); // Receive a single character from the software serial port
+//          Data.concat(character); // Add the received character to the receive buffer
+//          if (character == '\n')
+//          {
+//              
+//              //Serial.print(Data);
+//
+//              int str_len = Data.length() + 1; 
+//
+//              // Prepare the character array (the buffer) 
+//              char char_array[str_len];
+//              
+//              // Copy it over 
+//              Data.toCharArray(char_array, str_len);
+//              
+//              byte index = 0;
+//              ptr = strtok(char_array, ",");  // delimiter
+//              while (ptr != NULL)
+//              {
+//                strings[index] = ptr;
+//                index++;
+//                ptr = strtok(NULL, ",");
+//              }
+////              A = strings[0];
+////              B = strings[1];
+////              C = strings[2];
+////              D = strings[3];
+//              for (int n = 0; n < index; n++)
+//               {  
+//                  if(n==0){
+//                    A=atoi(strings[n]);
+//                      }
+////                  if(n==1){B=strings[n]};
+////                  if(n==2){C=strings[n]};
+////                  if(n==3){D=strings[n]};
+////                  Serial.print(n);
+////                  Serial.print("  ");
+////                  Serial.println(strings[n]);
+//               }
+//  
+//              // Clear receive buffer so we're ready to receive the next line
+//              Data = "";
+//              //delay(500);
+//          }
+//      }
       
-    Serial.println("A: " + String(A, 3));
-    Serial.println("B: " + String(B, 3));
-    Serial.println("C: " + String(C, 3));
-    Serial.println("D: " + String(D, 3));
-    Serial.println();
-    delay(500);
+    
   }
 
 //============
@@ -162,7 +155,18 @@ void parseData() {      // split the data into its parts
     strcpy(messageFromPC, strtokIndx); // copy it to messageFromPC
  
     strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    floatFromPC = atof(strtokIndx);     // convert this part to an integer
+    A = atoi(strtokIndx);     // convert this part to an integer
+
+    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
+    B = atoi(strtokIndx);     // convert this part to an integer
+
+    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
+    C = atoi(strtokIndx);     // convert this part to an integer
+
+    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
+    D = atoi(strtokIndx);     // convert this part to an integer
+
+    
 
 //    strtokIndx = strtok(NULL, ",");
 //    floatFromPC = atof(strtokIndx);     // convert this part to a float
@@ -172,20 +176,21 @@ void parseData() {      // split the data into its parts
 //============
 
 void useParsedData() {
-  
-  if (!strcmp(messageFromPC, "A")){
-    A = floatFromPC;
-  }
-  if (!strcmp(messageFromPC, "B")){
-    B = floatFromPC;
-  }
+    Serial.print("Message ");
+    Serial.println(messageFromPC);
+    Serial.print("A ");
+    Serial.println(A);
+    Serial.print("B ");
+    Serial.println(B);
 
   
-  Serial.print("MESSAGE: ");
-  Serial.print(messageFromPC);
-  Serial.println("A: " + String(A, 3));
-  Serial.println("B: " + String(B, 3));
-  Serial.println();
-  delay(1000);
+//  Serial.print("MESSAGE: ");
+//  Serial.print(messageFromPC);
+//  Serial.println("A: " + String(A));
+//  Serial.println("B: " + String(B));
+//  Serial.println("A: " + String(C));
+//  Serial.println("B: " + String(D));
+//  Serial.println();
+//  delay(1000);
     
 }
