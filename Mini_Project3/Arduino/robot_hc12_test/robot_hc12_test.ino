@@ -1,4 +1,5 @@
 #include <SoftwareSerial.h>
+#include <MedianFilterLib.h>
 
 String Data = "";
 
@@ -28,6 +29,12 @@ int B = 0;
 int C = 0;
 int D = 0;
 int E = 0;
+
+MedianFilter<int> Af(20);
+MedianFilter<int> Bf(20);
+MedianFilter<int> Cf(20);
+MedianFilter<int> Df(20);
+MedianFilter<int> Ef(20);
 
 boolean newData = false;
 
@@ -61,13 +68,11 @@ void loop() {
 //        newData = false;
 //    }
 
-
-      while (HC12.available())
-      {
+      while (HC12.available()) {
           char character = HC12.read(); // Receive a single character from the software serial port
           Data.concat(character); // Add the received character to the receive buffer
-          if (character == '\n')
-          {
+          
+          if (character == '\n') {
               
               //Serial.print(Data);
 
@@ -81,8 +86,7 @@ void loop() {
               
               byte index = 0;
               ptr = strtok(char_array, ",");  // delimiter
-              while (ptr != NULL)
-              {
+              while (ptr != NULL) {
                 strings[index] = ptr;
                 index++;
                 ptr = strtok(NULL, ",");
@@ -91,34 +95,52 @@ void loop() {
 //              B = strings[1];
 //              C = strings[2];
 //              D = strings[3];
-              for (int n = 0; n < index; n++)
+              A = Af.AddValue(filter(atoi(strings[0])));
+              B = Bf.AddValue(filter(atoi(strings[1])));
+              C = Cf.AddValue(filter(atoi(strings[2])));
+              D = Df.AddValue(filter(atoi(strings[3])));
+              /*for (int n = 0; n < index; n++)
                {  
-                  if(n==0){
-                    A=atoi(strings[n]);
-                      }
-//                  if(n==1){B=strings[n]};
-//                  if(n==2){C=strings[n]};
-//                  if(n==3){D=strings[n]};
-//                  Serial.print(n);
-//                  Serial.print("  ");
-//                  Serial.println(strings[n]);
-               }
+                  if(n==0){A[i]=atoi(strings[n]);}
+                  if(n==1){B=filter(strings[n]);}
+                  if(n==2){C=filter(atoi(strings[n]));}
+                  if(n==3){D=filter(atoi(strings[n]));}
+                  Serial.print(n);
+                  Serial.print("  ");
+                  Serial.println(filter(atoi(strings[n])));
+               }*/
   
               // Clear receive buffer so we're ready to receive the next line
               Data = "";
-              //delay(500);
+              delay(10);
+        
+              Serial.println(A);
+              Serial.println(B);
+              Serial.println(C);
+              Serial.println(D);
           }
-      }
       
-    Serial.println("A: " + String(A, 3));
-    Serial.println("B: " + String(B, 3));
-    Serial.println("C: " + String(C, 3));
-    Serial.println("D: " + String(D, 3));
-    Serial.println();
-    delay(500);
-  }
+    //Serial.println("A: " + String(A, 3));
+    //Serial.println("B: " + String(B, 3));
+    //Serial.println("C: " + String(C, 3));
+    //Serial.println("D: " + String(D, 3));
+    //Serial.println();
+    //Serial.println(A);
+    //delay(500);
+    }
+}
 
 //============
+
+int filter(int val) {
+  if(val > 1019) {
+    val = val / 10;
+  }
+  else if(val > 999) {
+    val = 999;
+  }
+  return val;
+}
 
 void recvWithStartEndMarkers() {
     static boolean recvInProgress = false;

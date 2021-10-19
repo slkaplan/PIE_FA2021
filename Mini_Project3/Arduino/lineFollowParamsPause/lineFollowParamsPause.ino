@@ -23,9 +23,9 @@ byte ledRPin = 8;
 
 bool mosfetLOn = true;    
 bool mosfetROn = true;    
-bool pause = true;          // Uses char 'p'
-float baseSpeed = 60;       // Uses char 'b'
-float errorPercent = 0.5;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
+bool pause = false;          // Uses char 'p'
+float baseSpeed = 55;       // Uses char 'b'
+float errorPercent = 0.7;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
 float errorPercent2 = 0.8;  // char 'r'
 float reduction = 0;
 float leftRightMatch = 1.0; // If one wheel drives faster
@@ -65,6 +65,16 @@ void loop() {
   sensorRValue = analogRead(sensorRPin);
   sensorXLValue = analogRead(sensorXLPin);
   sensorXRValue = analogRead(sensorXRPin);
+
+  Serial.print(sensorXLValue);
+  Serial.print(" ");
+  Serial.print(sensorLValue);
+  Serial.print(" ");
+  Serial.print(sensorRValue);
+  Serial.print(" ");
+  Serial.println(sensorXRValue);
+  
+
 
   // Act
   if(!pause){
@@ -126,7 +136,7 @@ void linefollow2(int speed, int range) {
     //Serial.println("Turning Left");
     MotorR->run(BACKWARD);
     MotorL->run(BACKWARD);
-    while(sensorLValue < range){
+    while(sensorLValue < range && sensorXLValue < range){
       delay(1);
       sensorLValue = analogRead(sensorLPin);
       MotorR->setSpeed(motorRSpeed);
@@ -142,7 +152,7 @@ void linefollow2(int speed, int range) {
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(FORWARD);
-    while(sensorRValue < range){
+    while(sensorRValue < range && sensorXRValue < range){
       delay(1);
       sensorRValue = analogRead(sensorRPin);
       MotorR->setSpeed(motorRSpeed);
@@ -153,35 +163,35 @@ void linefollow2(int speed, int range) {
   else if (sensorXRValue > range) {
 //    MotorR->setSpeed(speed - speed*(errorPercent2));//speed - speed*errorPercent2);
 //    MotorL->setSpeed(speed + speed*(errorPercent2));// + speed*errorPercent2);
-    motorRSpeed = speed - speed*(errorPercent2);
+    motorRSpeed = speed - speed*(errorPercent2/2);
     motorLSpeed = speed + speed*(errorPercent2);
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
-//    while(sensorRValue < range && sensorLValue < range){
-//      delay(1);
-//      sensorRValue = analogRead(sensorRPin);
-//      sensorLValue = analogRead(sensorLPin);
-//      MotorR->setSpeed(motorRSpeed);
-//      MotorL->setSpeed(motorLSpeed);
-//    }
+    while(sensorRValue < range && sensorLValue < range){
+      delay(1);
+      sensorRValue = analogRead(sensorRPin);
+      sensorLValue = analogRead(sensorLPin);
+      MotorR->setSpeed(motorRSpeed);
+      MotorL->setSpeed(motorLSpeed);
+    }
   }
   // If outer left sensor hits, sharp right
   else if (sensorXLValue > range) {
 //    MotorR->setSpeed(speed + speed*(errorPercent2));// + speed*errorPercent2);
 //    MotorL->setSpeed(speed - speed*(errorPercent2));//speed - speed*errorPercent2);
     motorRSpeed = speed + speed*(errorPercent2);
-    motorLSpeed = speed - speed*(errorPercent2);
+    motorLSpeed = speed - speed*(errorPercent2/2);
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
-//    while(sensorLValue < range && sensorRValue < range){
-//      delay(1);
-//      sensorLValue = analogRead(sensorLPin);
-//      sensorRValue = analogRead(sensorRPin);
-//      MotorR->setSpeed(motorRSpeed);
-//      MotorL->setSpeed(motorLSpeed);
-//    }
+    while(sensorLValue < range && sensorRValue < range){
+      delay(1);
+      sensorLValue = analogRead(sensorLPin);
+      sensorRValue = analogRead(sensorRPin);
+      MotorR->setSpeed(motorRSpeed);
+      MotorL->setSpeed(motorLSpeed);
+    }
   }
   
   else if (sensorRValue > range && sensorLValue < range) {
@@ -196,8 +206,8 @@ void linefollow2(int speed, int range) {
   else if (sensorRValue < range && sensorLValue > range) {
 //    MotorR->setSpeed(speed + (speed*errorPercent));
 //    MotorL->setSpeed(speed - (speed*(errorPercent/1.5)));
-    motorRSpeed = speed - speed*errorPercent;
-    motorLSpeed = speed + speed*(errorPercent/1.5);
+    motorLSpeed = speed - speed*errorPercent;
+    motorRSpeed = speed + speed*(errorPercent/1.5);
     //Serial.println("Turning Right");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
