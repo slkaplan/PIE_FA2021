@@ -3,6 +3,26 @@
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 #include <SoftwareSerial.h>
 
+#include <MedianFilterLib.h>
+
+String Data = "";
+bool newData = true;
+char *strings[5]; // an array of pointers to the pieces of the above array after strtok()
+char *ptr = NULL;
+String radio_msg = "";
+
+int A = 0;
+int B = 0;
+int C = 0;
+int D = 0;
+int E = 0;
+
+MedianFilter<int> Af(20);
+MedianFilter<int> Bf(20);
+MedianFilter<int> Cf(20);
+MedianFilter<int> Df(20);
+MedianFilter<int> Ef(20);
+
 SoftwareSerial HC12(10, 11); // HC-12 TX Pin, HC-12 RX Pin
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *MotorL = AFMS.getMotor(1);
@@ -24,9 +44,9 @@ byte ledRPin = 8;
 bool mosfetLOn = true;    
 bool mosfetROn = true;    
 bool pause = false;          // Uses char 'p'
-float baseSpeed = 55;       // Uses char 'b'
-float errorPercent = 0.7;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
-float errorPercent2 = 0.8;  // char 'r'
+float baseSpeed = 40;       // Uses char 'b'
+float errorPercent = 0.6;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
+float errorPercent2 = 0.9;  // char 'r'
 float reduction = 0;
 float leftRightMatch = 1.0; // If one wheel drives faster
 int sensorCutoff = 600;     // Uses char 'c'  IR sensor cutoff, same for both sensors
@@ -40,7 +60,7 @@ char tempChars[numChars];        // temporary array for use when parsing
 char messageFromPC[numChars] = {0};
 int integerFromPC = 0;
 float floatFromPC = 0.0;
-boolean newData = false;
+
 
 void setup() {
   AFMS.begin();
@@ -52,27 +72,30 @@ void setup() {
   pinMode(ledRPin, OUTPUT);
   digitalWrite(ledLPin, mosfetLOn);
   digitalWrite(ledRPin, mosfetROn);
+  for(int i = 0; i < 20; i++) {
+    getNewData();
+  }
 }
 
 void loop() {
  
   // Grab Serial Data and update values
-  recvWithStartEndMarkers();
-  updateParams();
+  getNewData();
+  
 
   // Read the Sensors/update data
   sensorLValue = analogRead(sensorLPin);
+  delay(10);
   sensorRValue = analogRead(sensorRPin);
+  delay(10);
   sensorXLValue = analogRead(sensorXLPin);
-  sensorXRValue = analogRead(sensorXRPin);
+  delay(10);
 
-  Serial.print(sensorXLValue);
-  Serial.print(" ");
-  Serial.print(sensorLValue);
-  Serial.print(" ");
-  Serial.print(sensorRValue);
-  Serial.print(" ");
-  Serial.println(sensorXRValue);
+  sensorXRValue = analogRead(sensorXRPin);
+  delay(10);
+
+
+  
   
 
 
@@ -81,7 +104,7 @@ void loop() {
     
     // Line Follow
     if(mode == 0){
-      linefollow2(baseSpeed, sensorCutoff);
+      linefollow1(baseSpeed, sensorCutoff);
     }
     // Calibration
     else if(mode == 1){
@@ -99,23 +122,118 @@ void loop() {
   }
 }
 
-void linefollow1(int speed, int range) {
-  if (analogRead(A0) > range && analogRead(A3) < range) {
-    MotorR->setSpeed(speed * 0);
-    MotorL->setSpeed(speed * 1.5);
-  }
-  else if (analogRead(A0) < range && analogRead(A3) > range) {
-    MotorR->setSpeed(speed * 1.5);
-    MotorL->setSpeed(speed * 0);
-  }
-  else {
-    MotorR->setSpeed(speed);
-    MotorL->setSpeed(speed);
-  }
-}
 
 // This operates on the same premise as above but rather than on or off, it applies a negative and 
 // positive correction to each wheel, which may make things smoother
+void linefollow1(int speed, int range) {
+  int motorRSpeed = 0;
+  int motorLSpeed = 0;
+  
+  if (sensorXRValue > range && sensorRValue > range) {
+    motorRSpeed = 0;
+    motorLSpeed = speed;
+    //Serial.println("Turning Left");
+    MotorR->run(BACKWARD);
+    MotorL->run(BACKWARD);
+    while(sensorLValue < range && sensorXLValue < range){
+      delay(1);
+      sensorLValue = analogRead(sensorLPin);
+      MotorR->setSpeed(motorRSpeed);
+      MotorL->setSpeed(motorLSpeed);
+      Serial.print(sensorXLValue);
+      Serial.print(",");
+      Serial.print(sensorLValue);
+      Serial.print(",");
+      Serial.print(sensorRValue);
+      Serial.print(",");
+      Serial.print(sensorXRValue);
+      Serial.print(",");
+      Serial.print(motorRSpeed);
+      Serial.print(",");
+      Serial.print(motorLSpeed);
+      Serial.println(";");
+    }
+  }
+  // If both left sensors hit, sharp left corner. Turn right until a right sensor hits
+  else if (sensorXLValue > range && sensorLValue > range) {
+    motorRSpeed = speed;
+    motorLSpeed = 0;
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(FORWARD);
+    while(sensorRValue < range && sensorXRValue < range){
+      delay(1);
+      sensorRValue = analogRead(sensorRPin);
+      MotorR->setSpeed(motorRSpeed);
+      MotorL->setSpeed(motorLSpeed);
+      Serial.print(sensorXLValue);
+      Serial.print(",");
+      Serial.print(sensorLValue);
+      Serial.print(",");
+      Serial.print(sensorRValue);
+      Serial.print(",");
+      Serial.print(sensorXRValue);
+      Serial.print(",");
+      Serial.print(motorRSpeed);
+      Serial.print(",");
+      Serial.print(motorLSpeed);
+      Serial.println(";");
+    }
+  }
+  else if (sensorXRValue > range) {
+    motorRSpeed = speed - speed*(errorPercent2/2);
+    motorLSpeed = speed + speed*(errorPercent2);
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+  }
+  // If outer left sensor hits, sharp right
+  else if (sensorXLValue > range) {
+    motorRSpeed = speed + speed*(errorPercent2);
+    motorLSpeed = speed - speed*(errorPercent2/2);
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+  }
+  
+  else if (sensorRValue > range && sensorLValue < range) {
+    motorRSpeed = speed - speed*(errorPercent/1.5);
+    motorLSpeed = speed + speed*errorPercent;
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+  }
+  else if (sensorRValue < range && sensorLValue > range) {
+    motorRSpeed = speed + speed*errorPercent;
+    motorLSpeed = speed - speed*(errorPercent/1.5);
+    //Serial.println("Turning Right");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+  }
+  else {
+    motorRSpeed = speed*1.2;
+    motorLSpeed = speed*1.2;
+    //Serial.println("straight");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+  }
+  MotorR->setSpeed(motorRSpeed);
+  MotorL->setSpeed(motorLSpeed);
+  Serial.print(sensorXLValue);
+  Serial.print(",");
+  Serial.print(sensorLValue);
+  Serial.print(",");
+  Serial.print(sensorRValue);
+  Serial.print(",");
+  Serial.print(sensorXRValue);
+  Serial.print(",");
+  Serial.print(motorRSpeed);
+  Serial.print(",");
+  Serial.print(motorLSpeed);
+  Serial.println(";");
+}
+
+
 void linefollow2(int speed, int range) {
   int motorRSpeed = 0;
   int motorLSpeed = 0;
@@ -127,7 +245,7 @@ void linefollow2(int speed, int range) {
 //  Serial.print(" ");
 //  Serial.println(sensorXRValue);
 
-  // If both right sensors hit, sharp right corner. Turn right until a left sensor hits
+// If both right sensors hit, sharp right corner. Turn right until a left sensor hits
   if (sensorXRValue > range && sensorRValue > range) {
 //    MotorR->setSpeed(0);// + speed*errorPercent2);
 //    MotorL->setSpeed(speed);// - speed*errorPercent2);
@@ -237,170 +355,92 @@ void linefollow2(int speed, int range) {
 // results in a much bigger turning response from the robot, designated at errorPercent * expo. This should
 // allow the robot to handle tighter corners at faster baseline speeds.
 
-void linefollow3(int speed, int range, float expo) {
-  if (sensorXRValue > range) {
-    MotorR->setSpeed(speed - speed*(expo*errorPercent));
-    MotorL->setSpeed(speed + speed*(expo*errorPercent));
-  }
-  else if (sensorXLValue > range) {
-    MotorR->setSpeed(speed - speed*(expo*errorPercent));
-    MotorL->setSpeed(speed + speed*(expo*errorPercent));
-  }
-  else if (sensorRValue > range && sensorLValue < range) {
-    MotorR->setSpeed(speed - speed*errorPercent);
-    MotorL->setSpeed(speed + speed*errorPercent);
-  }
-  else if ((sensorRValue < range) && (sensorLValue > range)) {
-    MotorR->setSpeed(speed + speed*errorPercent);
-    MotorL->setSpeed(speed - speed*errorPercent);
-  }
-  /*else {
-    MotorR->setSpeed(speed);
-    MotorL->setSpeed(speed);
-  }*/
-}
-// IN PROGRESS (An idea I had that I didnt yet implement -Tigey)
-void linefollow4(int speed, int range) {
-  Serial.print(sensorXLValue);
-  Serial.print(" ");
-  Serial.print(sensorLValue);
-  Serial.print(" ");
-  Serial.print(sensorRValue);
-  Serial.print(" ");
-  Serial.print(sensorXRValue);
-  Serial.print(" ");
-  Serial.print(sensorLValue + 2*sensorXLValue);
-  Serial.print(" ");
-  Serial.println(sensorRValue + 2*sensorXRValue);
+
+
+
+
+
+
+
+
+
+
+void getNewData(){
+
+  newData = true;
+
+      while (HC12.available() && newData == true) {
+          char character = HC12.read(); // Receive a single character from the software serial port
+          Data.concat(character); // Add the received character to the receive buffer
+          
+          if (character == '\n') {
+
+              int str_len = Data.length() + 1; 
+
+              // Prepare the character array (the buffer) 
+              char char_array[str_len];
+              
+              // Copy it over 
+              Data.toCharArray(char_array, str_len);
+              
+              byte index = 0;
+              ptr = strtok(char_array, ",");  // delimiter
+              while (ptr != NULL) {
+                strings[index] = ptr;
+                index++;
+                ptr = strtok(NULL, ",");
+              }
+
+              
+//              A = strings[0];
+//              B = strings[1];
+//              C = strings[2];
+//              D = strings[3];
+                A = Af.AddValue(filter(atoi(strings[0])));
+                B = Bf.AddValue(filter(atoi(strings[1])));
+                C = Cf.AddValue(filter(atoi(strings[2])));
+                D = Df.AddValue(filter(atoi(strings[3])));
+
+                bool pause = false;
+                baseSpeed = map(A, 0, 1000, 0, 100);         
+                errorPercent = map(B, 0, 1000, 0, 100) / 100.0;
+                errorPercent2 = map(C, 0, 1000, 0, 100) / 100.0;
+                
+
+//              Serial.println("baseSpeed: " + String(baseSpeed));
+//              Serial.println("EP: " + String(errorPercent));
+//              Serial.println("EP2: " + String(errorPercent2));
+              
+              //Serial.println();
+              //delay(100);
+              /*for (int n = 0; n < index; n++)
+               {  
+                  if(n==0){A[i]=atoi(strings[n]);}
+                  if(n==1){B=filter(strings[n]);}
+                  if(n==2){C=filter(atoi(strings[n]));}
+                  if(n==3){D=filter(atoi(strings[n]));}
+                  Serial.print(n);
+                  Serial.print("  ");
+                  Serial.println(filter(atoi(strings[n])));
+               }*/
   
-  int baseline = sensorRValue + 2*sensorXRValue + sensorLValue + 2*sensorXLValue;
-  int binXR = 0;
-  int binR = 0;
-  int binL = 0;
-  int binXL = 0;
-  /*if(sensorXRValue > range{  int binXR = 1;  }
-  if sensorRValue > range{  int binR = 1;  }
-  if sensorLValue > range{  int binL = 1;  }
-  if sensorXLValue > range{  int binXL = 1;  }
-  
-  MotorR->setSpeed(speed * binXR);
-  MotorL->setSpeed(speed - speed*((sensorLValue + 2*sensorXLValue)/(baseline)));*/
-}
-
-//void recvWithStartEndMarkers() {
-//    static boolean recvInProgress = false;
-//    static byte ndx = 0;
-//    char startMarker = '<';
-//    char endMarker = '>';
-//    char rc;
-//    bool gotData = false;
-//    while (Serial.available() > 0) {
-//      newData = true;
-//      rc = Serial.read();
-//      receivedChars[ndx] = rc;
-//      ndx++;
-//    }
-//    if(newData){
-//      receivedChars[ndx] = '\0'; // terminate the string
-//      ndx = 0;
-//    }
-//
-//}
-
-void recvWithStartEndMarkers() {
-    static boolean recvInProgress = false;
-    static byte ndx = 0;
-    char startMarker = '<';
-    char endMarker = '>';
-    char rc;
-
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (recvInProgress == true) {
-            if (rc != endMarker) {
-                receivedChars[ndx] = rc;
-                ndx++;
-                if (ndx >= numChars) {
-                    ndx = numChars - 1;
-                }
-            }
-            else {
-                receivedChars[ndx] = '\0'; // terminate the string
-                recvInProgress = false;
-                ndx = 0;
-                newData = true;
-            }
-        }
-
-        else if (rc == startMarker) {
-            recvInProgress = true;
-        }
+              // Clear receive buffer so we're ready to receive the next line
+              Data = "";
+              newData = false;
+   
+          }
+      
+    
+    
     }
 }
 
-
-void parseData() {      // split the data into its parts
-
-    char * strtokIndx; // this is used by strtok() as an index
-
-    strtokIndx = strtok(tempChars,",");      // get the first part - the string
-    strcpy(messageFromPC, strtokIndx); // copy it to messageFromPC
- 
-    strtokIndx = strtok(NULL, ",");
-    floatFromPC = atof(strtokIndx);     // convert this part to a float
-
-}
-
-
-void showParsedData() {
-  // UNcoment to show what is sent
-    Serial.print("Message ");
-    Serial.println(messageFromPC);
-    Serial.print("Float ");
-    Serial.println(floatFromPC);
-}
-
-void updateParams(){
-  if (newData == true) {
-    strcpy(tempChars, receivedChars);
-        // this temporary copy is necessary to protect the original data
-        //   because strtok() used in parseData() replaces the commas with \0
-    parseData();
-    showParsedData();
-    newData = false;
-    char firstChar = messageFromPC[0];
-    switch (firstChar) {
-      case 'p':
-        // pause
-        pause = !pause;
-        break;
-      case 'b':
-        // pause
-        baseSpeed = floatFromPC;
-        break;
-      case 'e':
-        // pause
-        errorPercent = floatFromPC;
-        break;
-      case 'r':
-        // pause
-        errorPercent2 = floatFromPC;
-        break;
-      case 'c':
-        // pause
-        sensorCutoff = floatFromPC;
-        break;
-      case 'm':
-        // pause
-        mode = floatFromPC;
-        break;
-      default:
-        // statements
-        Serial.print("Could not match '");
-        Serial.print(messageFromPC);
-        Serial.print("' to a variable");
-        break;
-    }
+int filter(int val) {
+  if(val > 1019) {
+    val = val / 10;
   }
+  else if(val > 999) {
+    val = 999;
+  }
+  return val;
 }
