@@ -2,6 +2,7 @@
 #include <MedianFilterLib.h>
 
 String Data = "";
+bool newData = true;
 
 SoftwareSerial HC12(10, 11); // HC-12 TX Pin, HC-12 RX Pin
 
@@ -36,7 +37,7 @@ MedianFilter<int> Cf(20);
 MedianFilter<int> Df(20);
 MedianFilter<int> Ef(20);
 
-boolean newData = false;
+
 
 
 int test = 0;
@@ -54,21 +55,9 @@ void setup() {
 
 void loop() {
 
-//    while (HC12.available()) {        // If HC-12 has data
-//    Serial.println(HC12.read());      // Send the data to Serial monitor
-//  }
-  
-//    recvWithStartEndMarkers();
-//    if (newData == true) {
-//        strcpy(tempChars, receivedChars);
-//            // this temporary copy is necessary to protect the original data
-//            //   because strtok() used in parseData() replaces the commas with \0
-//        parseData();
-//        useParsedData();
-//        newData = false;
-//    }
+      newData = true;
 
-      while (HC12.available()) {
+      while (HC12.available() && newData == true) {
           char character = HC12.read(); // Receive a single character from the software serial port
           Data.concat(character); // Add the received character to the receive buffer
           
@@ -91,6 +80,8 @@ void loop() {
                 index++;
                 ptr = strtok(NULL, ",");
               }
+
+              
 //              A = strings[0];
 //              B = strings[1];
 //              C = strings[2];
@@ -99,6 +90,13 @@ void loop() {
               B = Bf.AddValue(filter(atoi(strings[1])));
               C = Cf.AddValue(filter(atoi(strings[2])));
               D = Df.AddValue(filter(atoi(strings[3])));
+
+//              Serial.println("A: " + String(A));
+//              Serial.println("B: " + String(B));
+//              Serial.println("C: " + String(C));
+//              Serial.println("D: " + String(D));
+//              Serial.println();
+//              delay(100);
               /*for (int n = 0; n < index; n++)
                {  
                   if(n==0){A[i]=atoi(strings[n]);}
@@ -112,22 +110,22 @@ void loop() {
   
               // Clear receive buffer so we're ready to receive the next line
               Data = "";
+              newData = false;
               delay(10);
         
-              Serial.println(A);
-              Serial.println(B);
-              Serial.println(C);
-              Serial.println(D);
+
           }
       
-    //Serial.println("A: " + String(A, 3));
-    //Serial.println("B: " + String(B, 3));
-    //Serial.println("C: " + String(C, 3));
-    //Serial.println("D: " + String(D, 3));
-    //Serial.println();
-    //Serial.println(A);
-    //delay(500);
+    
+    
     }
+    Serial.println("A: " + String(A));
+    Serial.println("B: " + String(B));
+    Serial.println("C: " + String(C));
+    Serial.println("D: " + String(D));
+    Serial.println();
+    delay(100);
+
 }
 
 //============

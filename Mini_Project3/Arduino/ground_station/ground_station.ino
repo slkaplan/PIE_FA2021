@@ -7,6 +7,8 @@
 
 
 String Data = "";
+char *strings[5]; // an array of pointers to the pieces of the above array after strtok()
+char *ptr = NULL;
 SoftwareSerial HC12(10, 11); // HC-12 TX Pin, HC-12 RX Pin
 bool rok = false;
 void setup() {
@@ -18,21 +20,24 @@ void setup() {
 void loop() {
   
 
-  while (HC12.available())
-      {
-          char character = HC12.read(); // Receive a single character from the software serial port
-          Data.concat(character); // Add the received character to the receive buffer
-          if (character == '\n')
-          {
-              
-              Serial.print(Data);
+//  while (HC12.available())
+//      {
+//          char character = HC12.read(); // Receive a single character from the software serial port
+//          Data.concat(character); // Add the received character to the receive buffer
+//          if (character == '\n')
+//          {
+//              
+//              //Serial.print(Data);
+//              
+//  
+//              // Add your code to parse the received line here....
+//  
+//              // Clear receive buffer so we're ready to receive the next line
+//              Data = "";
+//          }
+//      }
+
   
-              // Add your code to parse the received line here....
-  
-              // Clear receive buffer so we're ready to receive the next line
-              Data = "";
-          }
-      }
 
           
   int p0_val = analogRead(p0);
@@ -44,15 +49,9 @@ void loop() {
   int p3_val = analogRead(p3);
   delay(10);
 
-//  Serial.println(p0_val);
-//  Serial.println(p1_val);
-//  Serial.println(p2_val);
-//  Serial.println(p3_val);
-
-    
 
   String radio_msg = ""; 
-  radio_msg = radio_msg + "b" + p0_val + "," + p1_val + "," + p2_val + "," + p3_val + "," + "\n";
+  radio_msg = radio_msg + p0_val + "," + p1_val + "," + p2_val + "," + p3_val + "," + "\n";
   char copy[50];
   radio_msg.toCharArray(copy, 50);
   HC12.write(copy);
