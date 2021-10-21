@@ -38,6 +38,13 @@ int sensorRValue = 0;
 int sensorXLValue = 0;
 int sensorXRValue = 0;
 
+int XRCutoff = 750;
+int RCutoff = 700;
+int LCutoff = 700;
+int XLCutoff = 750;
+
+int laston = 4;
+
 byte ledLPin = 7;
 byte ledRPin = 8;
 
@@ -45,7 +52,7 @@ bool mosfetLOn = true;
 bool mosfetROn = true;    
 bool pause = false;          // Uses char 'p'
 float baseSpeed = 40;       // Uses char 'b'
-float errorPercent = 0.6;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
+float errorPercent = 0.4;   // Uses char 'e' base speed * error percent is the correction applied to each wheel
 float errorPercent2 = 0.9;  // char 'r'
 float reduction = 0;
 float leftRightMatch = 1.0; // If one wheel drives faster
@@ -61,6 +68,7 @@ char messageFromPC[numChars] = {0};
 int integerFromPC = 0;
 float floatFromPC = 0.0;
 
+unsigned long pmillis = 0;
 
 void setup() {
   AFMS.begin();
@@ -78,21 +86,26 @@ void setup() {
 }
 
 void loop() {
+
  
   // Grab Serial Data and update values
-  getNewData();
+  if(millis() - pmillis > 1000){
+    getNewData();
+    pmillis = millis();
+  }
+  
   
 
   // Read the Sensors/update data
   sensorLValue = analogRead(sensorLPin);
-  delay(10);
+  delay(1);
   sensorRValue = analogRead(sensorRPin);
-  delay(10);
+  delay(1);
   sensorXLValue = analogRead(sensorXLPin);
-  delay(10);
+  delay(1);
 
   sensorXRValue = analogRead(sensorXRPin);
-  delay(10);
+  delay(1);
 
 
   
@@ -129,96 +142,105 @@ void linefollow1(int speed, int range) {
   int motorRSpeed = 0;
   int motorLSpeed = 0;
   
-  if (sensorXRValue > range && sensorRValue > range) {
+  if (sensorXRValue > XRCutoff && sensorRValue > RCutoff) {
+    laston = 3;
     motorRSpeed = 0;
     motorLSpeed = speed;
     //Serial.println("Turning Left");
     MotorR->run(BACKWARD);
     MotorL->run(BACKWARD);
-    while(sensorLValue < range && sensorXLValue < range){
+    while(sensorLValue < LCutoff && sensorXLValue < XLCutoff){
       delay(1);
       sensorLValue = analogRead(sensorLPin);
       MotorR->setSpeed(motorRSpeed);
       MotorL->setSpeed(motorLSpeed);
-      Serial.print(sensorXLValue);
-      Serial.print(",");
-      Serial.print(sensorLValue);
-      Serial.print(",");
-      Serial.print(sensorRValue);
-      Serial.print(",");
-      Serial.print(sensorXRValue);
-      Serial.print(",");
-      Serial.print(motorRSpeed);
-      Serial.print(",");
-      Serial.print(motorLSpeed);
-      Serial.println(";");
+      //print_stat();
     }
+    laston = 1;
   }
   // If both left sensors hit, sharp left corner. Turn right until a right sensor hits
-  else if (sensorXLValue > range && sensorLValue > range) {
+  else if (sensorXLValue > XLCutoff && sensorLValue > LCutoff) {
+    laston = 1;
     motorRSpeed = speed;
     motorLSpeed = 0;
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(FORWARD);
-    while(sensorRValue < range && sensorXRValue < range){
+    while(sensorRValue < RCutoff && sensorXRValue < XRCutoff){
       delay(1);
       sensorRValue = analogRead(sensorRPin);
       MotorR->setSpeed(motorRSpeed);
       MotorL->setSpeed(motorLSpeed);
-      Serial.print(sensorXLValue);
-      Serial.print(",");
-      Serial.print(sensorLValue);
-      Serial.print(",");
-      Serial.print(sensorRValue);
-      Serial.print(",");
-      Serial.print(sensorXRValue);
-      Serial.print(",");
-      Serial.print(motorRSpeed);
-      Serial.print(",");
-      Serial.print(motorLSpeed);
-      Serial.println(";");
+      //print_stat();
     }
+    laston = 2;
   }
-  else if (sensorXRValue > range) {
-    motorRSpeed = speed - speed*(errorPercent2/2);
+  else if (sensorXRValue > XRCutoff) {
+    laston = 3;
+    motorRSpeed = speed - speed*(errorPercent2);
     motorLSpeed = speed + speed*(errorPercent2);
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
-  }
-  // If outer left sensor hits, sharp right
-  else if (sensorXLValue > range) {
-    motorRSpeed = speed + speed*(errorPercent2);
-    motorLSpeed = speed - speed*(errorPercent2/2);
-    //Serial.println("Turning Left");
-    MotorR->run(FORWARD);
-    MotorL->run(BACKWARD);
+    MotorR->setSpeed(motorRSpeed);
+    MotorL->setSpeed(motorLSpeed);
   }
   
-  else if (sensorRValue > range && sensorLValue < range) {
-    motorRSpeed = speed - speed*(errorPercent/1.5);
-    motorLSpeed = speed + speed*errorPercent;
+  else if (sensorXLValue > XLCutoff) {
+    laston = 0;
+    motorRSpeed = speed + speed*(errorPercent2);
+    motorLSpeed = speed - speed*(errorPercent2);
     //Serial.println("Turning Left");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
+    MotorR->setSpeed(motorRSpeed);
+    MotorL->setSpeed(motorLSpeed);
   }
-  else if (sensorRValue < range && sensorLValue > range) {
-    motorRSpeed = speed + speed*errorPercent;
-    motorLSpeed = speed - speed*(errorPercent/1.5);
+  
+  else if (sensorRValue > RCutoff && sensorLValue < LCutoff) {
+    laston = 2;
+    motorRSpeed = speed - speed*(errorPercent);
+    motorLSpeed = speed + speed*(errorPercent);
+    //Serial.println("Turning Left");
+    MotorR->run(FORWARD);
+    MotorL->run(BACKWARD);
+    MotorR->setSpeed(motorRSpeed);
+    MotorL->setSpeed(motorLSpeed);
+  }
+  else if (sensorRValue < RCutoff && sensorLValue > LCutoff) {
+    laston = 1;
+    motorRSpeed = speed + speed*(errorPercent);
+    motorLSpeed = speed - speed*(errorPercent);
     //Serial.println("Turning Right");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
+    MotorR->setSpeed(motorRSpeed);
+    MotorL->setSpeed(motorLSpeed);
   }
   else {
-    motorRSpeed = speed*1.2;
-    motorLSpeed = speed*1.2;
+    if(laston == 0){
+      motorLSpeed = 0;
+      motorRSpeed = speed;
+    }
+    else if(laston == 3){
+      motorRSpeed = 0;
+      motorLSpeed = speed;
+    }
+    else{
+      motorRSpeed = speed;
+      motorLSpeed = speed;
+    }
     //Serial.println("straight");
     MotorR->run(FORWARD);
     MotorL->run(BACKWARD);
+    MotorR->setSpeed(motorRSpeed);
+    MotorL->setSpeed(motorLSpeed);
   }
-  MotorR->setSpeed(motorRSpeed);
-  MotorL->setSpeed(motorLSpeed);
+  
+  //print_stat();
+}
+
+/*void print_stat(){
   Serial.print(sensorXLValue);
   Serial.print(",");
   Serial.print(sensorLValue);
@@ -231,8 +253,7 @@ void linefollow1(int speed, int range) {
   Serial.print(",");
   Serial.print(motorLSpeed);
   Serial.println(";");
-}
-
+}*/
 
 void linefollow2(int speed, int range) {
   int motorRSpeed = 0;
@@ -368,13 +389,13 @@ void linefollow2(int speed, int range) {
 void getNewData(){
 
   newData = true;
-
+      
       while (HC12.available() && newData == true) {
           char character = HC12.read(); // Receive a single character from the software serial port
           Data.concat(character); // Add the received character to the receive buffer
           
+          //Serial.println("available");
           if (character == '\n') {
-
               int str_len = Data.length() + 1; 
 
               // Prepare the character array (the buffer) 
@@ -407,9 +428,9 @@ void getNewData(){
                 errorPercent2 = map(C, 0, 1000, 0, 100) / 100.0;
                 
 
-//              Serial.println("baseSpeed: " + String(baseSpeed));
-//              Serial.println("EP: " + String(errorPercent));
-//              Serial.println("EP2: " + String(errorPercent2));
+              Serial.println("baseSpeed: " + String(baseSpeed));
+              Serial.println("EP: " + String(errorPercent));
+              Serial.println("EP2: " + String(errorPercent2));
               
               //Serial.println();
               //delay(100);

@@ -1,5 +1,7 @@
-#define right A0
-#define left A3
+#define XR A0
+#define R A1
+#define L A2
+#define XL A3
 
 void setup() 
 {
@@ -9,17 +11,14 @@ Serial.begin(9600);
 }
 void loop(){   
   
-delay(250); 
-int right_read = analogRead(right);
-delay(250);
-int left_read = analogRead(left);
-Serial.print("right: ");
-Serial.print(right_read);
-
+Serial.print(analogRead(XR));
 Serial.print(" ");
- 
-Serial.print("left: ");
-Serial.print(left_read);
-
+Serial.print(analogRead(R));
+Serial.print(" ");
+Serial.print(analogRead(L));
+Serial.print(" ");
+Serial.print(analogRead(XL));
+Serial.print(" ");
 Serial.println("");
+delay(10);
 }
